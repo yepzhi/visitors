@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visitors ✨ — Yepzhi.com Unified Analytics</title>
+    <meta name="description"
+        content="Metametría unificada para todo el ecosistema yepzhi.com. Seguimiento en tiempo real de visitantes globales.">
+    <meta name="theme-color" content="#050510">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="styles.css?v=1.0">
+    
+    <!-- Leaflet CSS for Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📍</text></svg>">
+</head>
+
+<body class="visitors-page">
+
+    <!-- PARTICLE CANVAS -->
+    <canvas id="particle-canvas"></canvas>
+
+    <!-- NAVIGATION -->
+    <nav id="main-nav">
+        <a href="index.html" class="nav-logo">✨ <span>Visitors Meta-Dashboard</span></a>
+        <div class="nav-links">
+            <select id="site-filter" class="site-dropdown">
+                <option value="all">All Sites (yepzhi.com)</option>
+                <option value="neosys">Neosys Aeon</option>
+                <option value="jovenesstem">JovenesSTEM</option>
+                <option value="hopradio">HopRadio</option>
+                <option value="sergradio">SERGRadio</option>
+            </select>
+        </div>
+    </nav>
+
+    <!-- ═══════════════════════════════════════════
+         VISITOR DASHBOARD
+         ═══════════════════════════════════════════ -->
+    <main class="container">
+        <!-- GLOBAL COUNTERS -->
+        <div class="stat-grid reveal" style="padding-top: 150px;">
+            <div class="stat-card">
+                <h3>Total Page Views</h3>
+                <span id="stat-total-views">0</span>
+            </div>
+            <div id="active-visitors-card" class="stat-card">
+                <h3>Countries</h3>
+                <span id="stat-total-countries">0</span>
+            </div>
+            <div class="stat-card">
+                <h3>Cities Observed</h3>
+                <span id="stat-total-cities">0</span>
+            </div>
+        </div>
+
+        <!-- THE MAP -->
+        <section class="section reveal" style="padding-top: 20px;">
+            <div class="map-container">
+                <div id="visitor-map"></div>
+                <!-- Map Overlay Stats -->
+                <div id="map-overlay" class="map-overlay">
+                    <div class="map-overlay-inner">
+                        <h4 id="overlay-site-name">GLOBAL TRAFFIC</h4>
+                        <p id="overlay-last-visit">Last visit: Just now</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- DETAILED TABLE -->
+        <section class="section reveal" style="padding-top: 20px;">
+            <div class="table-container">
+                <h3 class="subsection-title">Recent Activity</h3>
+                <table id="visitors-table">
+                    <thead>
+                        <tr>
+                            <th>Site / Source</th>
+                            <th>Location</th>
+                            <th>Path</th>
+                            <th>Referrer</th>
+                            <th>Timestamp</th>
+                        </tr>
+                    </thead>
+                    <tbody id="visitors-tbody">
+                        <!-- Data will be injected here -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- ═══════════════════════════════════════════
+         FOOTER
+         ═══════════════════════════════════════════ -->
+    <footer class="footer">
+        <div class="container text-center">
+            <p style="opacity: 0.6; font-size: 0.85rem;">Visitors Meta-Metric System © 2026</p>
+            <p class="text-accent" style="font-weight: 700; font-size: 0.9rem;">#ThinkWithEvidence</p>
+        </div>
+    </footer>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Dashboard Logic -->
+    <script src="app.js?v=1.0"></script>
+</body>
+
+</html>
