@@ -17,7 +17,7 @@
         rel="stylesheet">
 
     <!-- Styles -->
-    <link rel="stylesheet" href="styles.css?v=1.0">
+    <link rel="stylesheet" href="styles.css?v=2.0">
     
     <!-- Leaflet CSS for Map -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -31,12 +31,15 @@
     <!-- PARTICLE CANVAS -->
     <canvas id="particle-canvas"></canvas>
 
-    <!-- NAVIGATION -->
+    <!-- NAVIGATION (Glass Pill) -->
     <nav id="main-nav">
-        <a href="index.html" class="nav-logo">✨ <span>Visitors Meta-Dashboard</span></a>
+        <a href="index.html" class="nav-logo">
+            <span style="font-size: 1.2rem;">📍</span> 
+            <span>NETWØRK METRICS</span>
+        </a>
         <div class="nav-links">
             <select id="site-filter" class="site-dropdown">
-                <option value="all">All Sites (yepzhi.com)</option>
+                <option value="all">Global Ecosystem</option>
                 <option value="neosys">Neosys Aeon</option>
                 <option value="jovenesstem">JovenesSTEM</option>
                 <option value="hopradio">HopRadio</option>
@@ -46,68 +49,75 @@
     </nav>
 
     <!-- ═══════════════════════════════════════════
-         VISITOR DASHBOARD
+         COMMAND CENTER HERO (Map + HUD)
          ═══════════════════════════════════════════ -->
-    <main class="container">
-        <!-- GLOBAL COUNTERS -->
-        <div class="stat-grid reveal" style="padding-top: 150px;">
-            <div class="stat-card">
-                <h3>Total Page Views</h3>
-                <span id="stat-total-views">0</span>
-            </div>
-            <div id="active-visitors-card" class="stat-card">
-                <h3>Countries</h3>
-                <span id="stat-total-countries">0</span>
-            </div>
-            <div class="stat-card">
-                <h3>Cities Observed</h3>
-                <span id="stat-total-cities">0</span>
+    <main class="command-center container">
+        
+        <div class="map-viewport reveal">
+            <!-- THE MAP -->
+            <div id="visitor-map"></div>
+
+            <!-- FLOATING HUD -->
+            <div class="hud-container">
+                <div class="hud-left">
+                    <div class="hud-card">
+                        <h3>Impressions</h3>
+                        <span id="stat-total-views" class="stat-value">0</span>
+                    </div>
+                    <div class="hud-card">
+                        <h3>Geographies</h3>
+                        <span id="stat-total-countries" class="stat-value">0</span>
+                    </div>
+                    <div class="hud-card">
+                        <h3>Active Nodes</h3>
+                        <span id="stat-total-cities" class="stat-value">0</span>
+                    </div>
+                </div>
+
+                <div class="hud-right">
+                    <div class="map-status">
+                        <div id="overlay-site-name" class="status-site">GLOBAL TRAFFIC</div>
+                        <div id="overlay-last-visit" class="status-time">Pulse: OK</div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- THE MAP -->
-        <section class="section reveal" style="padding-top: 20px;">
-            <div class="map-container">
-                <div id="visitor-map"></div>
-                <!-- Map Overlay Stats -->
-                <div id="map-overlay" class="map-overlay">
-                    <div class="map-overlay-inner">
-                        <h4 id="overlay-site-name">GLOBAL TRAFFIC</h4>
-                        <p id="overlay-last-visit">Last visit: Just now</p>
-                    </div>
+        <!-- DETAILED ACTIVITY -->
+        <section class="activity-section reveal">
+            <div class="glass-panel">
+                <h3 class="subsection-title">Node Activity Feed</h3>
+                
+                <div style="overflow-x: auto;">
+                    <table id="visitors-table">
+                        <thead>
+                            <tr>
+                                <th>Source Node</th>
+                                <th>Geographic Origin</th>
+                                <th>Resource Path</th>
+                                <th>Acquisition</th>
+                                <th>Timestamp (UTC)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="visitors-tbody">
+                            <!-- Data injected via app.js -->
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </section>
 
-        <!-- DETAILED TABLE -->
-        <section class="section reveal" style="padding-top: 20px;">
-            <div class="table-container">
-                <h3 class="subsection-title">Recent Activity</h3>
-                <table id="visitors-table">
-                    <thead>
-                        <tr>
-                            <th>Site / Source</th>
-                            <th>Location</th>
-                            <th>Path</th>
-                            <th>Referrer</th>
-                            <th>Timestamp</th>
-                        </tr>
-                    </thead>
-                    <tbody id="visitors-tbody">
-                        <!-- Data will be injected here -->
-                    </tbody>
-                </table>
-            </div>
-        </section>
     </main>
 
     <!-- ═══════════════════════════════════════════
          FOOTER
          ═══════════════════════════════════════════ -->
-    <footer class="footer">
+    <footer class="footer" style="padding: 40px 0; border-top: 1px solid var(--glass-border); margin-top: 60px;">
         <div class="container text-center">
-            <p style="opacity: 0.6; font-size: 0.85rem;">Visitors Meta-Metric System © 2026</p>
-            <p class="text-accent" style="font-weight: 700; font-size: 0.9rem;">#ThinkWithEvidence</p>
+            <p style="opacity: 0.4; font-size: 0.75rem; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.1em;">
+                Visitors Unified Analytics — Build 4.7.4
+            </p>
+            <p class="text-accent" style="font-weight: 800; font-size: 0.8rem; margin-top: 8px;">#ThinkWithEvidence</p>
         </div>
     </footer>
 
@@ -119,7 +129,7 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
     <!-- Dashboard Logic -->
-    <script src="app.js?v=1.0"></script>
+    <script src="app.js?v=2.0"></script>
 </body>
 
 </html>
