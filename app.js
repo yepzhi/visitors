@@ -26,7 +26,7 @@ let currentTimeRange = 'all';
 let lastSnapshotData = null;
 let unsubscribe = null;
 const accentColor = "#a78bfa";
-const MAX_SAMPLE = 3000;
+
 
 function escapeHtml(s) {
     if (s == null || s === undefined) return '';
@@ -202,9 +202,9 @@ function setupSnapshot() {
 
     let q;
     if (currentFilter === 'all') {
-        q = db.collection('visits').orderBy('timestamp', 'desc').limit(MAX_SAMPLE);
+        q = db.collection('visits').orderBy('timestamp', 'desc');
     } else {
-        q = db.collection('visits').where('site', '==', currentFilter).limit(MAX_SAMPLE);
+        q = db.collection('visits').where('site', '==', currentFilter);
     }
 
     unsubscribe = q.onSnapshot((snapshot) => {
