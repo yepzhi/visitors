@@ -38,6 +38,14 @@
             <span>NETWØRK METRICS</span>
         </a>
         <div class="nav-links">
+            <div class="tab-switcher">
+                <button class="tab-btn active" data-tab="map">Map</button>
+                <button class="tab-btn" data-tab="data">Data Insights</button>
+            </div>
+            <button id="refresh-btn" class="refresh-pill">
+                <span>Refresh</span>
+                <span class="refresh-icon">↻</span>
+            </button>
             <select id="site-filter" class="site-dropdown">
                 <option value="all">Global Ecosystem</option>
                 <option value="neosys">Neosys Aeon</option>
@@ -70,31 +78,120 @@
          ═══════════════════════════════════════════ -->
     <main class="command-center container">
         
-        <div class="map-viewport reveal">
-            <!-- THE MAP -->
-            <div id="visitor-map"></div>
+        <!-- TAB 1: MAP VIEW -->
+        <div id="map-tab" class="tab-content active">
+            <div class="map-viewport reveal">
+                <!-- THE MAP -->
+                <div id="visitor-map"></div>
 
-            <!-- FLOATING HUD -->
-            <div class="hud-container">
-                <div class="hud-left">
-                    <div class="hud-card">
-                        <h3>Impressions</h3>
-                        <span id="stat-total-views" class="stat-value">0</span>
+                <!-- FLOATING HUD -->
+                <div class="hud-container">
+                    <div class="hud-left">
+                        <div class="hud-card">
+                            <h3>Impressions</h3>
+                            <span id="stat-total-views" class="stat-value">0</span>
+                        </div>
+                        <div class="hud-card">
+                            <h3>Geographies</h3>
+                            <span id="stat-total-countries" class="stat-value">0</span>
+                        </div>
+                        <div class="hud-card">
+                            <h3>Active Nodes</h3>
+                            <span id="stat-total-cities" class="stat-value">0</span>
+                        </div>
                     </div>
-                    <div class="hud-card">
-                        <h3>Geographies</h3>
-                        <span id="stat-total-countries" class="stat-value">0</span>
+
+                    <div class="hud-right">
+                        <div class="map-status">
+                            <div id="overlay-site-name" class="status-site">GLOBAL TRAFFIC</div>
+                            <div id="overlay-last-visit" class="status-time">Pulse: OK</div>
+                        </div>
                     </div>
-                    <div class="hud-card">
-                        <h3>Active Nodes</h3>
-                        <span id="stat-total-cities" class="stat-value">0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: DATA INSIGHTS -->
+        <div id="data-tab" class="tab-content">
+            <div class="analytics-grid reveal">
+                <!-- RANKINGS -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">City Ranking</h3>
+                        <span style="font-size: 0.7rem; opacity: 0.5;">Hits</span>
+                    </div>
+                    <div id="city-ranking" class="ranking-list">
+                        <!-- Injected via JS -->
                     </div>
                 </div>
 
-                <div class="hud-right">
-                    <div class="map-status">
-                        <div id="overlay-site-name" class="status-site">GLOBAL TRAFFIC</div>
-                        <div id="overlay-last-visit" class="status-time">Pulse: OK</div>
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Country Ranking</h3>
+                        <span style="font-size: 0.7rem; opacity: 0.5;">Hits</span>
+                    </div>
+                    <div id="country-ranking" class="ranking-list">
+                        <!-- Injected via JS -->
+                    </div>
+                </div>
+
+                <!-- TECH SPECS -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Browser Top 3</h3>
+                    </div>
+                    <div id="browser-stats" class="tech-stats-container">
+                        <!-- Injected via JS -->
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">OS Versions</h3>
+                    </div>
+                    <div id="os-stats" class="tech-stats-container">
+                        <!-- Injected via JS -->
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Device Ratio</h3>
+                    </div>
+                    <div class="ratio-label" style="display: flex; justify-content: space-between; font-size: 0.7rem;">
+                        <span> iPhone</span>
+                        <span>🤖 Android</span>
+                    </div>
+                    <div id="device-ratio" class="ratio-container">
+                        <div id="ratio-apple" class="ratio-half ratio-apple" style="width: 50%;">--%</div>
+                        <div id="ratio-android" class="ratio-half ratio-android" style="width: 50%;">--%</div>
+                    </div>
+                </div>
+
+                <!-- ACQUISITION -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Referrer Insights</h3>
+                    </div>
+                    <div id="referrer-stats" class="ranking-list">
+                        <!-- Injected via JS -->
+                    </div>
+                </div>
+
+                <!-- PERFORMANCE -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Engagement</h3>
+                    </div>
+                    <div class="engagement-metrics" style="display: flex; gap: 20px;">
+                        <div style="flex:1;">
+                            <div style="font-size: 0.6rem; opacity: 0.5; text-transform: uppercase;">Avg Time</div>
+                            <div id="stat-avg-time" style="font-size: 1.5rem; font-weight: 800;">4m 12s</div>
+                        </div>
+                        <div style="flex:1;">
+                            <div style="font-size: 0.6rem; opacity: 0.5; text-transform: uppercase;">CTR Est.</div>
+                            <div id="stat-ctr" style="font-size: 1.5rem; font-weight: 800; color: var(--accent);">3.2%</div>
+                        </div>
                     </div>
                 </div>
             </div>
