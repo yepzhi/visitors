@@ -74,16 +74,22 @@ body {
     position: fixed;
     top: 24px; left: 40px; right: 40px;
     z-index: 1000;
-    display: flex;
+    display: grid;
+    grid-template-columns: 280px 1fr 280px;
     align-items: center;
-    justify-content: space-between;
-    padding: 8px 12px 8px 24px;
+    padding: 8px 16px;
     background: var(--glass);
     backdrop-filter: var(--blur);
     -webkit-backdrop-filter: var(--blur);
     border: 1px solid var(--glass-border);
     border-radius: 100px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.nav-links {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
 }
 
 .nav-logo {
@@ -113,7 +119,7 @@ body {
 /* ── Command Center Layout ───────────────── */
 .command-center {
     position: relative;
-    padding-top: 120px;
+    padding-top: 160px;
     min-height: 100vh;
 }
 
@@ -302,21 +308,35 @@ td {
 }
 
 .card {
-    background: var(--glass);
+    background: var(--surface);
     backdrop-filter: var(--blur);
     -webkit-backdrop-filter: var(--blur);
     border: 1px solid var(--glass-border);
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius);
     padding: 24px;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
     transition: var(--transition);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 
+        0 10px 30px rgba(0, 0, 0, 0.4),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0.15;
 }
 
 .card:hover {
-    border-color: var(--glass-highlight);
-    background: rgba(20, 20, 50, 0.4);
+    background: var(--surface-hover);
+    border-color: rgba(255, 255, 255, 0.15);
+    transform: translateY(-5px);
+    box-shadow: 
+        0 20px 40px rgba(0, 0, 0, 0.6),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.1);
 }
 
 .card-header {
@@ -535,10 +555,11 @@ td {
 /* ── Nav Enhancements ───────────────────── */
 .tab-switcher {
     display: flex;
-    background: rgba(255,255,255,0.05);
-    border-radius: 50px;
+    gap: 4px;
+    background: rgba(0, 0, 0, 0.2);
     padding: 4px;
-    margin-right: 12px;
+    border-radius: 100px;
+    justify-self: center;
 }
 
 .tab-btn {

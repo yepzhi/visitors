@@ -24,7 +24,7 @@ let markers = [];
 let currentFilter = 'all';
 let unsubscribe = null;
 const accentColor = "#a78bfa";
-const MAX_SAMPLE = 1000;
+const MAX_SAMPLE = 3000;
 
 function escapeHtml(s) {
     if (s == null || s === undefined) return '';
