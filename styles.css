@@ -74,16 +74,35 @@ body {
     position: fixed;
     top: 24px; left: 40px; right: 40px;
     z-index: 1000;
-    display: grid;
-    grid-template-columns: 280px 1fr 280px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px 24px;
+    background: rgba(10, 10, 25, 0.7);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 32px;
+    box-shadow: 
+        0 8px 32px rgba(0, 0, 0, 0.5),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.nav-primary {
+    display: flex;
+    justify-content: space-between;
     align-items: center;
-    padding: 8px 16px;
-    background: var(--glass);
-    backdrop-filter: var(--blur);
-    -webkit-backdrop-filter: var(--blur);
-    border: 1px solid var(--glass-border);
-    border-radius: 100px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    width: 100%;
+}
+
+.nav-secondary {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .nav-links {
@@ -93,13 +112,31 @@ body {
 }
 
 .nav-logo {
-    font-size: 1.1rem;
+    font-size: 0.9rem;
     font-weight: 800;
     display: flex;
     align-items: center;
-    gap: 12px;
     text-decoration: none;
     color: #fff;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.nav-logo-text {
+    background: linear-gradient(90deg, #fff 0%, var(--accent) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 5px rgba(167, 139, 250, 0.3));
+}
+
+.accent-text {
+    opacity: 0.7;
+    font-weight: 400;
+    color: var(--text-secondary);
+    text-transform: lowercase;
+    -webkit-text-fill-color: initial;
+    background: none;
 }
 
 .site-dropdown {
@@ -119,7 +156,7 @@ body {
 /* ── Command Center Layout ───────────────── */
 .command-center {
     position: relative;
-    padding-top: 160px;
+    padding-top: 220px; /* Adjusted for taller nav */
     min-height: 100vh;
 }
 
@@ -308,17 +345,17 @@ td {
 }
 
 .card {
-    background: var(--surface);
-    backdrop-filter: var(--blur);
-    -webkit-backdrop-filter: var(--blur);
-    border: 1px solid var(--glass-border);
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: var(--radius);
     padding: 24px;
     transition: var(--transition);
     position: relative;
     overflow: hidden;
     box-shadow: 
-        0 10px 30px rgba(0, 0, 0, 0.4),
+        0 15px 35px rgba(0, 0, 0, 0.4),
         inset 0 0 0 1px rgba(255, 255, 255, 0.05);
 }
 
@@ -559,7 +596,6 @@ td {
     background: rgba(0, 0, 0, 0.2);
     padding: 4px;
     border-radius: 100px;
-    justify-self: center;
 }
 
 .tab-btn {
@@ -618,3 +654,59 @@ td {
     .hud-card { min-width: 0; padding: 16px 20px; }
     .hud-card .stat-value { font-size: 1.75rem; }
 }
+
+/* ── Time Filter Switches ─────────────────── */
+.time-switches {
+    display: flex;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 4px;
+    border-radius: 100px;
+    gap: 2px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    justify-self: center;
+}
+
+.time-switches::-webkit-scrollbar {
+    display: none;
+}
+
+.time-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-tertiary);
+    padding: 6px 14px;
+    border-radius: 50px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: var(--transition);
+    white-space: nowrap;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.time-btn:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.time-btn.active {
+    background: var(--accent);
+    color: #000;
+}
+
+@media (max-width: 1200px) {
+    #main-nav {
+        flex-wrap: wrap;
+        height: auto;
+        padding: 12px 20px;
+        gap: 12px;
+    }
+    .time-switches {
+        order: 3;
+        width: 100%;
+        justify-content: center;
+    }
+}
+

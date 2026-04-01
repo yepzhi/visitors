@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════
-   VISITORS DASHBOARD LOGIC — app.js (v5.0.0)
+   VISITORS DASHBOARD LOGIC — app.js (v5.1.0)
    Firestore: filtered queries use where+limit only (no composite index).
    Tighten security in firestore.rules (see repo root).
    ═══════════════════════════════════════════ */
@@ -22,6 +22,8 @@ const db = firebase.firestore();
 let map = null;
 let markers = [];
 let currentFilter = 'all';
+let currentTimeRange = 'all';
+let lastSnapshotData = null;
 let unsubscribe = null;
 const accentColor = "#a78bfa";
 const MAX_SAMPLE = 3000;
@@ -101,6 +103,15 @@ function initUI() {
         setupSnapshot();
     });
 
+    document.querySelectorAll('.time-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            currentTimeRange = btn.getAttribute('data-range');
+            document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            if (lastSnapshotData) processData(lastSnapshotData);
+        });
+    });
+
     const params = new URLSearchParams(window.location.search);
     if (params.get('admin') === '1') {
         const s = document.createElement('script');
@@ -113,30 +124,76 @@ function initUI() {
 
 function setupIngestButton() {
     const ingestBtn = document.getElementById('ingest-btn');
-    if (typeof HISTORICAL_DATA === 'undefined' || !ingestBtn) return;
+    const filePicker = document.getElementById('ingest-file-picker');
+    if (!ingestBtn || !filePicker) return;
 
     ingestBtn.style.display = 'flex';
-    ingestBtn.addEventListener('click', async () => {
-        if (!confirm(`Deploy ${HISTORICAL_DATA.length} historical records to Firestore?`)) return;
+    ingestBtn.addEventListener('click', () => filePicker.click());
 
-        ingestBtn.disabled = true;
-        const label = ingestBtn.querySelector('span');
-        label.innerText = 'Ingesting...';
+    filePicker.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
 
-        for (let i = 0; i < HISTORICAL_DATA.length; i++) {
-            const item = { ...HISTORICAL_DATA[i] };
-            item.timestamp = firebase.firestore.Timestamp.fromMillis(item.timestamp_ms);
-            delete item.timestamp_ms;
-
+        const reader = new FileReader();
+        reader.onload = async (event) => {
             try {
-                await db.collection('visits').add(item);
-                label.innerText = `${Math.round(((i + 1) / HISTORICAL_DATA.length) * 100)}%`;
-            } catch (e) {
-                console.error('Ingest Error:', e);
+                const data = JSON.parse(event.target.result);
+                const records = Array.isArray(data) ? data : [data];
+                
+                if (!confirm(`Import ${records.length} records from ${file.name}? (Smart Deduplication is active)`)) return;
+
+                ingestBtn.disabled = true;
+                const label = ingestBtn.querySelector('span');
+                const originalLabel = label.innerText;
+
+                let added = 0;
+                let skipped = 0;
+
+                for (let i = 0; i < records.length; i++) {
+                    const record = { ...records[i] };
+                    
+                    // ── Normalize Data ──────────────────
+                    if (record.timestamp_ms) {
+                        record.timestamp = firebase.firestore.Timestamp.fromMillis(record.timestamp_ms);
+                        delete record.timestamp_ms;
+                    }
+                    
+                    // ── Deterministic ID ────────────────
+                    const tsVal = record.timestamp ? record.timestamp.toMillis() : Date.now();
+                    const siteId = (record.site || 'unknown').toLowerCase();
+                    const pathId = (record.path || '/').replace(/[#/.]/g, '_');
+                    const cityId = (record.city || 'unk').toLowerCase().replace(/\s+/g, '_');
+                    const docId = `hist_${siteId}_${tsVal}_${pathId}_${cityId}`;
+
+                    try {
+                        const docRef = db.collection('visits').doc(docId);
+                        const docSnap = await docRef.get();
+                        
+                        if (docSnap.exists) {
+                            skipped++;
+                        } else {
+                            await docRef.set(record);
+                            added++;
+                        }
+                        
+                        label.innerText = `${Math.round(((i + 1) / records.length) * 100)}%`;
+                    } catch (err) {
+                        console.error('[Ingest] Error adding record:', err);
+                    }
+                }
+
+                alert(`Ingestion Complete!\n✅ ${added} New records added\n⏭️ ${skipped} Duplicates skipped`);
+                label.innerText = originalLabel;
+                ingestBtn.disabled = false;
+                filePicker.value = ''; // Reset picker
+                setupSnapshot(); // Refresh view
+            } catch (err) {
+                alert('Error parsing JSON file. Please ensure it is a valid Visitors export.');
+                console.error('[Ingest] Parse error:', err);
+                ingestBtn.disabled = false;
             }
-        }
-        label.innerText = 'Done!';
-        ingestBtn.style.background = '#22c55e';
+        };
+        reader.readAsText(file);
     });
 }
 
@@ -151,6 +208,8 @@ function setupSnapshot() {
     }
 
     unsubscribe = q.onSnapshot((snapshot) => {
+        console.log('[Visitors] Snapshot size:', snapshot.size);
+        lastSnapshotData = snapshot; // Store for re-filtering
         processData(snapshot);
     }, (error) => {
         console.error('Snapshot error:', error);
@@ -174,12 +233,28 @@ function processData(snapshot) {
     };
 
     const tbody = document.getElementById('visitors-tbody');
-    tbody.innerHTML = '';
+    if (tbody) tbody.innerHTML = '';
 
-    markers.forEach(m => map.removeLayer(m));
+    markers.forEach(m => { if (map) map.removeLayer(m); });
     markers = [];
 
-    const sortedDocs = snapshot.docs.slice().sort((a, b) => {
+    // ── Time Filter Logic ──────────────────
+    const now = new Date();
+    let startTime = 0;
+    if (currentTimeRange === 'today') startTime = new Date().setHours(0,0,0,0);
+    else if (currentTimeRange === '1w') startTime = now.getTime() - (7 * 24 * 60 * 60 * 1000);
+    else if (currentTimeRange === '1m') startTime = now.getTime() - (30 * 24 * 60 * 60 * 1000);
+    else if (currentTimeRange === '3m') startTime = now.getTime() - (90 * 24 * 60 * 60 * 1000);
+    else if (currentTimeRange === '6m') startTime = now.getTime() - (180 * 24 * 60 * 60 * 1000);
+    else if (currentTimeRange === '1y') startTime = now.getTime() - (365 * 24 * 60 * 60 * 1000);
+
+    const filteredDocs = snapshot.docs.filter(docSnap => {
+        if (currentTimeRange === 'all') return true;
+        const ts = docSnap.get('timestamp')?.toMillis?.() ?? 0;
+        return ts >= startTime;
+    });
+
+    const sortedDocs = filteredDocs.slice().sort((a, b) => {
         const ta = a.get('timestamp')?.toMillis?.() ?? 0;
         const tb = b.get('timestamp')?.toMillis?.() ?? 0;
         return tb - ta;

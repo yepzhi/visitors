@@ -15,7 +15,7 @@
         href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap"
         rel="stylesheet">
 
-    <link rel="stylesheet" href="styles.css?v=5.0.0">
+    <link rel="stylesheet" href="styles.css?v=5.1.0">
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
@@ -28,46 +28,59 @@
     <canvas id="particle-canvas"></canvas>
 
     <nav id="main-nav">
-        <a href="index.html" class="nav-logo">
-            <span class="nav-logo-emoji" aria-hidden="true">📍</span>
-            <span>NETWØRK METRICS</span>
-        </a>
-        <div class="tab-switcher">
-            <button type="button" class="tab-btn active" data-tab="map">Map</button>
-            <button type="button" class="tab-btn" data-tab="data">Data Insights</button>
+        <div class="nav-primary">
+            <a href="./" class="nav-logo">
+                <span class="nav-logo-text">✨ yepzhi.com <span class="accent-text">live site traffic data</span></span>
+            </a>
+            <div class="nav-links">
+                <button type="button" id="refresh-btn" class="refresh-pill">
+                    <span>Refresh</span>
+                    <span class="refresh-icon">↻</span>
+                </button>
+                <button type="button" id="ingest-btn" class="refresh-pill admin-pill" style="display: none;">
+                    <span>Ingest Hist.</span>
+                    <span class="refresh-icon">⚡</span>
+                </button>
+                <input type="file" id="ingest-file-picker" accept=".json" style="display: none;">
+                <select id="site-filter" class="site-dropdown" aria-label="Filter by site">
+                    <option value="all">Global Ecosystem</option>
+                    <option value="neosys">Neosys Aeon</option>
+                    <option value="main">yepzhi.com (Main)</option>
+                    <option value="yepzhiweb">Yepzhi Web (Profile)</option>
+                    <option value="jovenesstem">JovenesSTEM</option>
+                    <option value="hopradio">HopRadio</option>
+                    <option value="sergradio">SERGRadio</option>
+                    <option value="daltonweb">Dalton's BDay</option>
+                    <option value="hotfact">HotFact Calendar</option>
+                    <option value="richmondbot">Richmond Support AI</option>
+                    <option value="cbsalon">CBSalon</option>
+                    <option value="eventseeker">EventSeeker</option>
+                    <option value="proassistant">ProAssistant</option>
+                    <option value="rprodash">RPro Dashboard</option>
+                    <option value="sensorapp">SensorApp</option>
+                    <option value="socialapp">SocialApp</option>
+                    <option value="bluechat">BlueChat</option>
+                    <option value="entrytest">EntryTest</option>
+                    <option value="finaltest">FinalTest</option>
+                    <option value="token-check">Richmond Token</option>
+                    <option value="ytdownloader">YT Downloader</option>
+                </select>
+            </div>
         </div>
-        <div class="nav-links">
-            <button type="button" id="refresh-btn" class="refresh-pill">
-                <span>Refresh</span>
-                <span class="refresh-icon">↻</span>
-            </button>
-            <button type="button" id="ingest-btn" class="refresh-pill admin-pill" style="display: none;">
-                <span>Ingest Hist.</span>
-                <span class="refresh-icon">⚡</span>
-            </button>
-            <select id="site-filter" class="site-dropdown" aria-label="Filter by site">
-                <option value="all">Global Ecosystem</option>
-                <option value="neosys">Neosys Aeon</option>
-                <option value="main">yepzhi.com (Main)</option>
-                <option value="yepzhiweb">Yepzhi Web (Profile)</option>
-                <option value="jovenesstem">JovenesSTEM</option>
-                <option value="hopradio">HopRadio</option>
-                <option value="sergradio">SERGRadio</option>
-                <option value="daltonweb">Dalton's BDay</option>
-                <option value="hotfact">HotFact Calendar</option>
-                <option value="richmondbot">Richmond Support AI</option>
-                <option value="cbsalon">CBSalon</option>
-                <option value="eventseeker">EventSeeker</option>
-                <option value="proassistant">ProAssistant</option>
-                <option value="rprodash">RPro Dashboard</option>
-                <option value="sensorapp">SensorApp</option>
-                <option value="socialapp">SocialApp</option>
-                <option value="bluechat">BlueChat</option>
-                <option value="entrytest">EntryTest</option>
-                <option value="finaltest">FinalTest</option>
-                <option value="token-check">Richmond Token</option>
-                <option value="ytdownloader">YT Downloader</option>
-            </select>
+        <div class="nav-secondary">
+            <div class="tab-switcher">
+                <button type="button" class="tab-btn active" data-tab="map">Map View</button>
+                <button type="button" class="tab-btn" data-tab="data">Data Insights</button>
+            </div>
+            <div class="time-switches">
+                <button type="button" class="time-btn active" data-range="all">All Time</button>
+                <button type="button" class="time-btn" data-range="1y">1Y</button>
+                <button type="button" class="time-btn" data-range="6m">6M</button>
+                <button type="button" class="time-btn" data-range="3m">3M</button>
+                <button type="button" class="time-btn" data-range="1m">1M</button>
+                <button type="button" class="time-btn" data-range="1w">1W</button>
+                <button type="button" class="time-btn" data-range="today">Today</button>
+            </div>
         </div>
     </nav>
 
@@ -204,7 +217,7 @@
 
     <footer class="footer site-footer">
         <div class="container text-center">
-            <p class="footer-build">Visitors Unified Analytics — v5.0.0</p>
+            <p class="footer-build">Visitors Unified Analytics — v5.1.0</p>
             <p class="footer-tag">#ThinkWithEvidence</p>
         </div>
     </footer>
@@ -214,7 +227,7 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-    <script src="app.js?v=5.0.0"></script>
+    <script src="app.js?v=5.1.0"></script>
 </body>
 
 </html>
