@@ -9,17 +9,14 @@
         content="Metametría unificada para todo el ecosistema yepzhi.com. Seguimiento en tiempo real de visitantes globales.">
     <meta name="theme-color" content="#050510">
 
-    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap"
         rel="stylesheet">
 
-    <!-- Styles -->
-    <link rel="stylesheet" href="styles.css?v=2.0">
-    
-    <!-- Leaflet CSS for Map -->
+    <link rel="stylesheet" href="styles.css?v=5.0.0">
+
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
     <link rel="icon"
@@ -28,33 +25,30 @@
 
 <body class="visitors-page">
 
-    <!-- PARTICLE CANVAS -->
     <canvas id="particle-canvas"></canvas>
 
-    <!-- NAVIGATION (Glass Pill) -->
     <nav id="main-nav">
         <a href="index.html" class="nav-logo">
-            <span style="font-size: 1.2rem;">📍</span> 
+            <span class="nav-logo-emoji" aria-hidden="true">📍</span>
             <span>NETWØRK METRICS</span>
         </a>
         <div class="nav-links">
             <div class="tab-switcher">
-                <button class="tab-btn active" data-tab="map">Map</button>
-                <button class="tab-btn" data-tab="data">Data Insights</button>
+                <button type="button" class="tab-btn active" data-tab="map">Map</button>
+                <button type="button" class="tab-btn" data-tab="data">Data Insights</button>
             </div>
-            <button id="refresh-btn" class="refresh-pill">
+            <button type="button" id="refresh-btn" class="refresh-pill">
                 <span>Refresh</span>
                 <span class="refresh-icon">↻</span>
             </button>
-            <button id="ingest-btn" class="refresh-pill admin-pill" style="display: none;">
+            <button type="button" id="ingest-btn" class="refresh-pill admin-pill" style="display: none;">
                 <span>Ingest Hist.</span>
                 <span class="refresh-icon">⚡</span>
             </button>
-            <select id="site-filter" class="site-dropdown">
+            <select id="site-filter" class="site-dropdown" aria-label="Filter by site">
                 <option value="all">Global Ecosystem</option>
                 <option value="neosys">Neosys Aeon</option>
                 <option value="main">yepzhi.com (Main)</option>
-                <option value="neosys">Neosys Aeon</option>
                 <option value="yepzhiweb">Yepzhi Web (Profile)</option>
                 <option value="jovenesstem">JovenesSTEM</option>
                 <option value="hopradio">HopRadio</option>
@@ -77,178 +71,150 @@
         </div>
     </nav>
 
-    <!-- ═══════════════════════════════════════════
-         COMMAND CENTER HERO (Map + HUD)
-         ═══════════════════════════════════════════ -->
     <main class="command-center container">
-        
-        <!-- TAB 1: MAP VIEW -->
+
         <div id="map-tab" class="tab-content active">
             <div class="map-viewport reveal">
-                <!-- THE MAP -->
                 <div id="visitor-map"></div>
 
-                <!-- FLOATING HUD -->
                 <div class="hud-container">
                     <div class="hud-left">
                         <div class="hud-card">
-                            <h3>Impressions</h3>
+                            <h3>Records (sample)</h3>
                             <span id="stat-total-views" class="stat-value">0</span>
+                            <p class="hud-hint">Up to 1000 most recent</p>
                         </div>
                         <div class="hud-card">
-                            <h3>Geographies</h3>
+                            <h3>Countries</h3>
                             <span id="stat-total-countries" class="stat-value">0</span>
+                            <p class="hud-hint">Distinct in sample</p>
                         </div>
                         <div class="hud-card">
-                            <h3>Active Nodes</h3>
+                            <h3>Unique cities</h3>
                             <span id="stat-total-cities" class="stat-value">0</span>
+                            <p class="hud-hint">Distinct in sample</p>
                         </div>
                     </div>
 
                     <div class="hud-right">
                         <div class="map-status">
                             <div id="overlay-site-name" class="status-site">GLOBAL TRAFFIC</div>
-                            <div id="overlay-last-visit" class="status-time">Pulse: OK</div>
+                            <div id="overlay-last-visit" class="status-time">Last event: —</div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- TAB 2: DATA INSIGHTS -->
         <div id="data-tab" class="tab-content">
             <div class="analytics-grid reveal">
-                <!-- RANKINGS -->
                 <div class="card">
                     <div class="card-header">
                         <h3 class="card-title">City Ranking</h3>
-                        <span style="font-size: 0.7rem; opacity: 0.5;">Hits</span>
+                        <span class="card-meta">Hits</span>
                     </div>
-                    <div id="city-ranking" class="ranking-list">
-                        <!-- Injected via JS -->
-                    </div>
+                    <div id="city-ranking" class="ranking-list"></div>
                 </div>
 
                 <div class="card">
                     <div class="card-header">
                         <h3 class="card-title">Country Ranking</h3>
-                        <span style="font-size: 0.7rem; opacity: 0.5;">Hits</span>
+                        <span class="card-meta">Hits</span>
                     </div>
-                    <div id="country-ranking" class="ranking-list">
-                        <!-- Injected via JS -->
-                    </div>
+                    <div id="country-ranking" class="ranking-list"></div>
                 </div>
 
-                <!-- TECH SPECS -->
                 <div class="card">
                     <div class="card-header">
                         <h3 class="card-title">Browser Top 3</h3>
                     </div>
-                    <div id="browser-stats" class="tech-stats-container">
-                        <!-- Injected via JS -->
-                    </div>
+                    <div id="browser-stats" class="tech-stats-container"></div>
                 </div>
 
                 <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title">OS Versions</h3>
+                        <h3 class="card-title">OS Top 3</h3>
                     </div>
-                    <div id="os-stats" class="tech-stats-container">
-                        <!-- Injected via JS -->
-                    </div>
+                    <div id="os-stats" class="tech-stats-container"></div>
                 </div>
 
                 <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title">Device Ratio</h3>
+                        <h3 class="card-title">Device ratio</h3>
+                        <span class="card-meta">Apple vs Android signals</span>
                     </div>
-                    <div class="ratio-label" style="display: flex; justify-content: space-between; font-size: 0.7rem;">
-                        <span> iPhone</span>
-                        <span>🤖 Android</span>
+                    <div class="ratio-label">
+                        <span>Apple family</span>
+                        <span>Android</span>
                     </div>
                     <div id="device-ratio" class="ratio-container">
-                        <div id="ratio-apple" class="ratio-half ratio-apple" style="width: 50%;">--%</div>
-                        <div id="ratio-android" class="ratio-half ratio-android" style="width: 50%;">--%</div>
+                        <div id="ratio-apple" class="ratio-half ratio-apple">—</div>
+                        <div id="ratio-android" class="ratio-half ratio-android">—</div>
                     </div>
                 </div>
 
-                <!-- ACQUISITION -->
                 <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title">Referrer Insights</h3>
+                        <h3 class="card-title">Referrer insights</h3>
                     </div>
-                    <div id="referrer-stats" class="ranking-list">
-                        <!-- Injected via JS -->
-                    </div>
+                    <div id="referrer-stats" class="ranking-list"></div>
                 </div>
 
-                <!-- PERFORMANCE -->
-                <div class="card">
+                <div class="card card-engagement">
                     <div class="card-header">
                         <h3 class="card-title">Engagement</h3>
                     </div>
-                    <div class="engagement-metrics" style="display: flex; gap: 20px;">
-                        <div style="flex:1;">
-                            <div style="font-size: 0.6rem; opacity: 0.5; text-transform: uppercase;">Avg Time</div>
-                            <div id="stat-avg-time" style="font-size: 1.5rem; font-weight: 800;">4m 12s</div>
+                    <p class="engagement-note">Session length and CTR are not collected by the tracker yet.</p>
+                    <div class="engagement-metrics">
+                        <div class="engagement-metric">
+                            <div class="engagement-label">Avg. time on page</div>
+                            <div id="stat-avg-time" class="engagement-value">—</div>
                         </div>
-                        <div style="flex:1;">
-                            <div style="font-size: 0.6rem; opacity: 0.5; text-transform: uppercase;">CTR Est.</div>
-                            <div id="stat-ctr" style="font-size: 1.5rem; font-weight: 800; color: var(--accent);">3.2%</div>
+                        <div class="engagement-metric">
+                            <div class="engagement-label">CTR</div>
+                            <div id="stat-ctr" class="engagement-value engagement-value-accent">—</div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- DETAILED ACTIVITY -->
-        <section class="activity-section reveal">
-            <div class="glass-panel">
-                <h3 class="subsection-title">Node Activity Feed</h3>
-                
-                <div style="overflow-x: auto;">
-                    <table id="visitors-table">
-                        <thead>
-                            <tr>
-                                <th>Source Node</th>
-                                <th>Geographic Origin</th>
-                                <th>Resource Path</th>
-                                <th>Acquisition</th>
-                                <th>Timestamp (UTC)</th>
-                            </tr>
-                        </thead>
-                        <tbody id="visitors-tbody">
-                            <!-- Data injected via app.js -->
-                        </tbody>
-                    </table>
+            <section class="activity-section reveal">
+                <div class="glass-panel">
+                    <h3 class="subsection-title">Activity feed</h3>
+                    <p class="activity-note">Latest 50 rows from the current sample (newest first).</p>
+                    <div class="table-wrap">
+                        <table id="visitors-table">
+                            <thead>
+                                <tr>
+                                    <th>Site</th>
+                                    <th>Origin</th>
+                                    <th>Path</th>
+                                    <th>Referrer</th>
+                                    <th>Time</th>
+                                </tr>
+                            </thead>
+                            <tbody id="visitors-tbody"></tbody>
+                        </table>
+                    </div>
                 </div>
-            </div>
-        </section>
+            </section>
+        </div>
 
     </main>
 
-    <!-- ═══════════════════════════════════════════
-         FOOTER
-         ═══════════════════════════════════════════ -->
-    <footer class="footer" style="padding: 40px 0; border-top: 1px solid var(--glass-border); margin-top: 60px;">
+    <footer class="footer site-footer">
         <div class="container text-center">
-            <p style="opacity: 0.4; font-size: 0.75rem; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.1em;">
-                Visitors Unified Analytics — Build 4.7.4
-            </p>
-            <p class="text-accent" style="font-weight: 800; font-size: 0.8rem; margin-top: 8px;">#ThinkWithEvidence</p>
+            <p class="footer-build">Visitors Unified Analytics — v5.0.0</p>
+            <p class="footer-tag">#ThinkWithEvidence</p>
         </div>
     </footer>
 
-    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    
-    <!-- Leaflet JS -->
+
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    
-    <!-- Dashboard Logic -->
-    <script src="historical_data.js"></script>
-    <script src="app.js?v=2.0"></script>
+
+    <script src="app.js?v=5.0.0"></script>
 </body>
 
 </html>

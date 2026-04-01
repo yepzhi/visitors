@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════
-   VISITORS METAMETRY — Premium Command Center (v2.0)
+   VISITORS METAMETRY — Premium Command Center (v5.0.0)
    ═══════════════════════════════════════════ */
 
 :root {
@@ -189,6 +189,18 @@ body {
     display: block;
 }
 
+.hud-hint {
+    font-size: 0.65rem;
+    color: var(--text-tertiary);
+    margin-top: 8px;
+    font-family: var(--font-mono);
+    letter-spacing: 0.04em;
+}
+
+.nav-logo-emoji {
+    font-size: 1.2rem;
+}
+
 .hud-right {
     display: flex;
     flex-direction: column;
@@ -322,6 +334,138 @@ td {
     font-family: var(--font-mono);
 }
 
+.card-meta {
+    font-size: 0.7rem;
+    opacity: 0.5;
+}
+
+.empty-hint {
+    font-size: 0.8rem;
+    color: var(--text-tertiary);
+    padding: 8px 0;
+}
+
+.tech-stat-name {
+    font-size: 0.8rem;
+    width: 72px;
+    flex-shrink: 0;
+}
+
+.tech-stat-count {
+    font-size: 0.7rem;
+    opacity: 0.5;
+    min-width: 2rem;
+    text-align: right;
+}
+
+.tech-bar-os {
+    background: var(--accent-2) !important;
+}
+
+.card-engagement .engagement-note {
+    font-size: 0.8rem;
+    color: var(--text-tertiary);
+    line-height: 1.4;
+    margin-bottom: 16px;
+}
+
+.engagement-metrics {
+    display: flex;
+    gap: 20px;
+}
+
+.engagement-metric {
+    flex: 1;
+}
+
+.engagement-label {
+    font-size: 0.6rem;
+    opacity: 0.5;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+}
+
+.engagement-value {
+    font-size: 1.5rem;
+    font-weight: 800;
+}
+
+.engagement-value-accent {
+    color: var(--accent);
+}
+
+.ratio-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.7rem;
+    margin-bottom: 4px;
+    color: var(--text-secondary);
+}
+
+.activity-note {
+    font-size: 0.8rem;
+    color: var(--text-tertiary);
+    margin-bottom: 20px;
+}
+
+.table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 12px;
+}
+
+#visitors-table {
+    min-width: 640px;
+}
+
+.td-path {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    opacity: 0.75;
+    max-width: 14rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.td-ref {
+    font-size: 0.8rem;
+    max-width: 12rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.td-time {
+    font-size: 0.75rem;
+    opacity: 0.5;
+    white-space: nowrap;
+}
+
+.site-footer {
+    padding: 40px 0;
+    border-top: 1px solid var(--glass-border);
+    margin-top: 60px;
+}
+
+.footer-build {
+    opacity: 0.4;
+    font-size: 0.75rem;
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.footer-tag {
+    font-weight: 800;
+    font-size: 0.8rem;
+    margin-top: 8px;
+    color: var(--accent);
+}
+
+.text-center { text-align: center; }
+
 /* ── Scrollable Rankings ────────────────── */
 .ranking-list {
     max-height: 200px;
@@ -442,6 +586,14 @@ td {
     .hud-container { flex-direction: column; gap: 16px; }
     .hud-left { flex-direction: column; width: 100%; }
     .hud-card { width: 100%; }
-     #main-nav { top: 12px; left: 12px; right: 12px; flex-direction: column; border-radius: 24px; gap: 10px; padding: 16px; }
-     .tab-switcher, .refresh-pill, .site-dropdown { width: 100%; margin: 0; }
+    #main-nav { top: 12px; left: 12px; right: 12px; flex-direction: column; border-radius: 24px; gap: 10px; padding: 16px; }
+    .tab-switcher, .refresh-pill, .site-dropdown { width: 100%; margin: 0; }
+    .container { padding: 0 16px; }
+    .engagement-metrics { flex-direction: column; }
+}
+
+@media (max-width: 520px) {
+    .map-viewport { height: 62vh; min-height: 280px; }
+    .hud-card { min-width: 0; padding: 16px 20px; }
+    .hud-card .stat-value { font-size: 1.75rem; }
 }

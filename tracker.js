@@ -1,10 +1,9 @@
 /* ═══════════════════════════════════════════
    UNIVERSAL TRACKER — yepzhi.com Meta-Analytics
-   Usage: Add this script to any site to track globally.
+   Set window.NEOSYS_SITE_ID for a stable site key when possible.
    ═══════════════════════════════════════════ */
 
-(function() {
-    // 1. CONFIGURATION
+(function () {
     const FIREBASE_CONFIG = {
         apiKey: "AIzaSyD-tbdD6eHip2fCBAJnGEj3_4eqLMc1EhE",
         authDomain: "neosys-4dc42.firebaseapp.com",
@@ -15,10 +14,22 @@
         measurementId: "G-V2FD2WR82B"
     };
 
-    // Site Identification
-    const siteId = window.NEOSYS_SITE_ID || window.location.hostname.replace('yepzhi.com', '').replace(/\//g, '') || 'main';
+    function resolveSiteId() {
+        if (window.NEOSYS_SITE_ID != null && String(window.NEOSYS_SITE_ID).trim() !== '') {
+            return String(window.NEOSYS_SITE_ID).trim().slice(0, 64);
+        }
+        const host = (window.location.hostname || '').toLowerCase();
+        if (!host) return 'main';
+        if (host === 'yepzhi.com' || host === 'www.yepzhi.com') return 'main';
+        if (host.endsWith('.yepzhi.com')) {
+            const sub = host.replace(/\.yepzhi\.com$/i, '').replace(/^www\./, '');
+            return sub || 'main';
+        }
+        return host.replace(/^www\./, '').replace(/\./g, '-').slice(0, 64) || 'main';
+    }
 
-    // 2. LOAD FIREBASE (Async)
+    const siteId = resolveSiteId();
+
     const loadScript = (url) => {
         return new Promise((resolve, reject) => {
             const script = document.createElement('script');
@@ -28,6 +39,30 @@
             document.head.appendChild(script);
         });
     };
+
+    async function fetchGeo() {
+        const empty = {
+            city: 'Unknown',
+            country: 'Unknown',
+            country_code: '??',
+            latitude: 0,
+            longitude: 0
+        };
+        try {
+            const res = await fetch('https://ipapi.co/json/');
+            const data = await res.json();
+            if (!data || data.error || data.reason) return empty;
+            return {
+                city: data.city || empty.city,
+                country: data.country_name || empty.country,
+                country_code: data.country_code || empty.country_code,
+                latitude: typeof data.latitude === 'number' ? data.latitude : 0,
+                longitude: typeof data.longitude === 'number' ? data.longitude : 0
+            };
+        } catch {
+            return empty;
+        }
+    }
 
     async function initTracker() {
         try {
@@ -41,35 +76,30 @@
             }
             const db = firebase.firestore();
 
-            // 3. GET GEO DATA (IP-API)
-            const geoResponse = await fetch('https://ipapi.co/json/');
-            const geoData = await geoResponse.json();
+            const geo = await fetchGeo();
 
-            // 4. LOG VISIT
             const visitData = {
                 site: siteId,
                 path: window.location.pathname,
                 full_url: window.location.href,
                 referrer: document.referrer || 'direct',
-                city: geoData.city || 'Unknown',
-                country: geoData.country_name || 'Unknown',
-                country_code: geoData.country_code || '??',
-                latitude: geoData.latitude || 0,
-                longitude: geoData.longitude || 0,
+                city: geo.city,
+                country: geo.country,
+                country_code: geo.country_code,
+                latitude: geo.latitude,
+                longitude: geo.longitude,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp(),
                 user_agent: navigator.userAgent,
                 language: navigator.language
             };
 
             await db.collection('visits').add(visitData);
-            console.log(`[Neosys-Tracker] Visit logged for ${siteId}`);
-
+            console.log('[Yepzhi-Tracker] Visit logged:', siteId);
         } catch (error) {
-            console.warn("[Neosys-Tracker] Tracking error:", error);
+            console.warn('[Yepzhi-Tracker] Tracking error:', error);
         }
     }
 
-    // Initialize after a small delay to avoid blocking main content
     if (document.readyState === 'complete') {
         initTracker();
     } else {
