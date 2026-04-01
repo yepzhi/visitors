@@ -59,6 +59,32 @@ function initUI() {
         currentFilter = e.target.value;
         setupSnapshot();
     });
+    // Ingest Button (Admin)
+    const ingestBtn = document.getElementById('ingest-btn');
+    if (typeof HISTORICAL_DATA !== 'undefined') {
+        ingestBtn.style.display = 'flex';
+        ingestBtn.addEventListener('click', async () => {
+            if (!confirm(`Deploying ${HISTORICAL_DATA.length} historical records to Firestore. Proceed?`)) return;
+            
+            ingestBtn.disabled = true;
+            ingestBtn.querySelector('span').innerText = 'Ingesting...';
+            
+            for (let i = 0; i < HISTORICAL_DATA.length; i++) {
+                const item = HISTORICAL_DATA[i];
+                item.timestamp = firebase.firestore.Timestamp.fromMillis(item.timestamp_ms);
+                delete item.timestamp_ms;
+                
+                try {
+                    await db.collection('visits').add(item);
+                    ingestBtn.querySelector('span').innerText = `${Math.round(((i+1)/HISTORICAL_DATA.length)*100)}%`;
+                } catch (e) {
+                    console.error("Ingest Error:", e);
+                }
+            }
+            ingestBtn.querySelector('span').innerText = 'Done!';
+            ingestBtn.style.background = '#22c55e';
+        });
+    }
 }
 
 // 4. DATA ENGINE

@@ -1,42 +1,4 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Import Historical Data</title>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    <style>
-        body { font-family: 'Inter', sans-serif; background: #0f172a; color: white; padding: 40px; text-align: center; }
-        .card { background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255,255,255,0.1); padding: 30px; border-radius: 16px; display: inline-block; max-width: 500px; backdrop-filter: blur(10px); }
-        .btn { padding: 15px 40px; background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 18px; font-weight: 600; transition: transform 0.2s; }
-        .btn:hover { transform: scale(1.05); }
-        .btn:disabled { opacity: 0.5; transform: none; }
-        #status { margin-top: 20px; font-family: monospace; color: #94a3b8; }
-        .progress { width: 100%; height: 8px; background: #334155; border-radius: 4px; margin-top: 20px; overflow: hidden; }
-        #bar { height: 100%; width: 0%; background: #3b82f6; transition: width 0.1s; }
-    </style>
-</head>
-<body>
-    <div class="card">
-        <h1>Historical Data Import</h1>
-        <p>Ready to ingest 505 visits into Firestore.</p>
-        <button id="importBtn" class="btn">Start Ingestion</button>
-        <div class="progress"><div id="bar"></div></div>
-        <div id="status">Ready.</div>
-    </div>
-
-    <script>
-        const FIREBASE_CONFIG = {
-            apiKey: "AIzaSyD-tbdD6eHip2fCBAJnGEj3_4eqLMc1EhE",
-            authDomain: "neosys-4dc42.firebaseapp.com",
-            projectId: "neosys-4dc42",
-            storageBucket: "neosys-4dc42.firebasestorage.app",
-            messagingSenderId: "1009059504450",
-            appId: "1:1009059504450:web:d26dd042f2139dcaa6e8db"
-        };
-        firebase.initializeApp(FIREBASE_CONFIG);
-        const db = firebase.firestore();
-        
-        const data = [
+        const HISTORICAL_DATA = [
   {
     "site": "sergradio",
     "path": "/SERGRadio/",
@@ -1634,32 +1596,3 @@
     "timestamp_ms": 1774426592000
   }
 ];
-
-        document.getElementById('importBtn').onclick = async () => {
-            const status = document.getElementById('status');
-            const btn = document.getElementById('importBtn');
-            const bar = document.getElementById('bar');
-            if (data.length === 0) { status.innerText = 'Error: No data found in script.'; return; }
-            btn.disabled = true;
-            status.innerText = 'Initializing ingestion...';
-
-            for (let i = 0; i < data.length; i++) {
-                const item = data[i];
-                item.timestamp = firebase.firestore.Timestamp.fromMillis(item.timestamp_ms);
-                delete item.timestamp_ms;
-                
-                try {
-                    await db.collection('visits').add(item);
-                    const pct = Math.round(((i+1)/data.length)*100);
-                    status.innerText = `Ingesting... ${pct}% (${i+1}/${data.length})`;
-                    bar.style.width = pct + '%';
-                } catch (e) {
-                    console.error("Error at item " + i, e);
-                }
-            }
-            status.innerHTML = '<span style="color:#22c55e">✓ Ingestion complete!</span>';
-            bar.style.background = '#22c55e';
-        };
-    </script>
-</body>
-</html>

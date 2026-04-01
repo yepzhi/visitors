@@ -46,6 +46,10 @@
                 <span>Refresh</span>
                 <span class="refresh-icon">↻</span>
             </button>
+            <button id="ingest-btn" class="refresh-pill admin-pill" style="display: none;">
+                <span>Ingest Hist.</span>
+                <span class="refresh-icon">⚡</span>
+            </button>
             <select id="site-filter" class="site-dropdown">
                 <option value="all">Global Ecosystem</option>
                 <option value="neosys">Neosys Aeon</option>
@@ -243,6 +247,7 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
     <!-- Dashboard Logic -->
+    <script src="historical_data.js"></script>
     <script src="app.js?v=2.0"></script>
 </body>
 
