@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════
-   VISITORS DASHBOARD LOGIC — app.js (v5.1.0)
-   Firestore: filtered queries use where+limit only (no composite index).
-   Tighten security in firestore.rules (see repo root).
+   VISITORS DASHBOARD LOGIC — app.js (v5.3.0)
+   Firestore: filtered queries use where+limit only.
+   Advanced Glassmorphism & Centered Nav integrated.
    ═══════════════════════════════════════════ */
 
 const FIREBASE_CONFIG = {
