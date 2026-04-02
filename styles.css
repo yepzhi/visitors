@@ -647,19 +647,52 @@ td {
 .refresh-pill:active .refresh-icon { transform: rotate(360deg); }
 
 @media (max-width: 1000px) {
-    .hud-container { flex-direction: column; gap: 16px; }
-    .hud-left { flex-direction: column; width: 100%; }
-    .hud-card { width: 100%; }
-    #main-nav { top: 12px; left: 12px; right: 12px; flex-direction: column; border-radius: 24px; gap: 10px; padding: 16px; }
-    .tab-switcher, .refresh-pill, .site-dropdown { width: 100%; margin: 0; }
+    #main-nav { 
+        top: 0; left: 0; right: 0; 
+        width: 100%; 
+        border-radius: 0 0 24px 24px;
+        padding: 12px 16px;
+        gap: 8px;
+        transform: none;
+    }
+    .nav-primary { flex-direction: column; align-items: start; gap: 8px; }
+    .nav-logo-text { font-size: 0.8rem; }
+    .nav-links { width: 100%; justify-content: space-between; }
+    .refresh-pill { margin: 0; padding: 6px 12px; }
+    .site-dropdown { flex: 1; padding: 6px; font-size: 0.75rem; }
+    .nav-secondary { padding-top: 8px; gap: 12px; }
+    .tab-switcher { width: 100%; }
+    .time-switches { width: 100%; }
     .container { padding: 0 16px; }
+    .command-center { padding-top: 240px; }
+    
+    /* HUD Fix for Mobile: No longer absolute inside map */
+    .map-viewport { height: 45vh; min-height: 320px; overflow: visible; margin-bottom: 20px;}
+    .hud-container { 
+        position: relative; 
+        top: 0; left: 0; right: 0; 
+        padding: 16px 0;
+        flex-direction: column; 
+        gap: 12px;
+        pointer-events: auto;
+    }
+    .hud-left { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; width: 100%; }
+    .hud-card { width: 100%; padding: 16px; min-width: 0; }
+    .hud-card .stat-value { font-size: 1.5rem; }
+    .hud-left .hud-card:last-child { grid-column: span 2; }
+    
+    .hud-right { position: absolute; bottom: 12px; right: 12px; z-index: 30; }
+    .map-status { min-width: 160px; padding: 10px 14px; background: rgba(5, 5, 20, 0.85); }
+    
+    .analytics-grid { grid-template-columns: 1fr; }
     .engagement-metrics { flex-direction: column; }
 }
 
 @media (max-width: 520px) {
-    .map-viewport { height: 62vh; min-height: 280px; }
-    .hud-card { min-width: 0; padding: 16px 20px; }
-    .hud-card .stat-value { font-size: 1.75rem; }
+    .command-center { padding-top: 260px; }
+    .map-viewport { height: 40vh; }
+    .hud-card .stat-value { font-size: 1.25rem; }
+    .hud-card h3 { font-size: 0.55rem; }
 }
 
 /* ── Time Filter Switches ─────────────────── */
