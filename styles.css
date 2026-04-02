@@ -668,7 +668,7 @@ td {
     
     /* HUD Fix for Mobile: No longer absolute inside map viewport */
     .map-viewport { height: auto; min-height: none; overflow: visible; margin-bottom: 20px; display: flex; flex-direction: column; background: transparent; border: none; box-shadow: none; }
-    #visitor-map { height: 45vh; border-radius: var(--radius); border: 1px solid var(--glass-border); box-shadow: 0 20px 50px rgba(0,0,0,0.5); order: 2; }
+    #visitor-map { height: 80vh; border-radius: var(--radius); border: 1px solid var(--glass-border); box-shadow: 0 20px 50px rgba(0,0,0,0.5); order: 2; }
     .hud-container { 
         position: relative; 
         top: 0; left: 0; right: 0; 
@@ -694,7 +694,7 @@ td {
 
 @media (max-width: 520px) {
     .command-center { padding-top: 260px; }
-    .map-viewport { height: 40vh; }
+    .map-viewport { min-height: 70vh; }
     .hud-card .stat-value { font-size: 1.25rem; }
     .hud-card h3 { font-size: 0.55rem; }
 }
