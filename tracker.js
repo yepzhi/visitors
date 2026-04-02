@@ -59,7 +59,8 @@
                 latitude: typeof data.latitude === 'number' ? data.latitude : 0,
                 longitude: typeof data.longitude === 'number' ? data.longitude : 0
             };
-        } catch {
+        } catch (e) {
+            // Silently fallback to empty geolocation
             return empty;
         }
     }
@@ -96,7 +97,12 @@
             await db.collection('visits').add(visitData);
             console.log('[Yepzhi-Tracker] Visit logged:', siteId);
         } catch (error) {
-            console.warn('[Yepzhi-Tracker] Tracking error:', error);
+            // Discrete log for tracking-only issues
+            if (error && error.code === 'permission-denied') {
+                console.log('%c [Yepzhi-Tracker] ', 'background:#333;color:#999;font-size:10px;', 'Tracking limited (Permissions)');
+            } else {
+                console.warn('[Yepzhi-Tracker] Tracking error:', error);
+            }
         }
     }
 
