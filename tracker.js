@@ -72,10 +72,14 @@
                 await loadScript('https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js');
             }
 
-            if (!firebase.apps.length) {
-                firebase.initializeApp(FIREBASE_CONFIG);
+            let trackerApp;
+            const APP_NAME = 'yepzhi_tracker';
+            
+            trackerApp = firebase.apps.find(a => a.name === APP_NAME);
+            if (!trackerApp) {
+                trackerApp = firebase.initializeApp(FIREBASE_CONFIG, APP_NAME);
             }
-            const db = firebase.firestore();
+            const db = trackerApp.firestore();
 
             const geo = await fetchGeo();
 
