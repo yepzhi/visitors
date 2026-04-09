@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════
-   VISITORS DASHBOARD LOGIC — app.js (v5.3.0)
+   VISITORS DASHBOARD LOGIC — app.js (v5.6.0)
    Firestore: filtered queries use where+limit only.
    Advanced Glassmorphism & Centered Nav integrated.
    ═══════════════════════════════════════════ */
@@ -20,6 +20,7 @@ if (!firebase.apps.length) {
 const db = firebase.firestore();
 
 let map = null;
+let markersGroup = null; // Centralized LayerGroup to prevent memory leaks
 let markers = [];
 let currentFilter = 'all';
 let currentTimeRange = 'all';
@@ -29,7 +30,7 @@ const accentColor = "#a78bfa";
 
 
 function escapeHtml(s) {
-    if (s == null || s === undefined) return '';
+    if (s == null) return '';
     return String(s)
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
@@ -55,10 +56,10 @@ function parseUA(uaString) {
     let browser = 'Other';
     let os = 'Unknown';
 
-    if (ua.includes('chrome')) browser = 'Chrome';
+    if (ua.includes('edg')) browser = 'Edge';
+    else if (ua.includes('chrome')) browser = 'Chrome';
     else if (ua.includes('safari') && !ua.includes('chrome')) browser = 'Safari';
     else if (ua.includes('firefox')) browser = 'Firefox';
-    else if (ua.includes('edg')) browser = 'Edge';
 
     if (ua.includes('windows')) os = 'Windows';
     else if (ua.includes('macintosh') || ua.includes('mac os')) os = 'macOS';
@@ -112,99 +113,20 @@ function initUI() {
         });
     });
 
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('admin') === '1') {
-        const s = document.createElement('script');
-        s.src = 'historical_data.js';
-        s.onload = () => setupIngestButton();
-        s.onerror = () => console.warn('[Visitors] historical_data.js failed to load');
-        document.body.appendChild(s);
-    }
-}
-
-function setupIngestButton() {
-    const ingestBtn = document.getElementById('ingest-btn');
-    const filePicker = document.getElementById('ingest-file-picker');
-    if (!ingestBtn || !filePicker) return;
-
-    ingestBtn.style.display = 'flex';
-    ingestBtn.addEventListener('click', () => filePicker.click());
-
-    filePicker.addEventListener('change', async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = async (event) => {
-            try {
-                const data = JSON.parse(event.target.result);
-                const records = Array.isArray(data) ? data : [data];
-                
-                if (!confirm(`Import ${records.length} records from ${file.name}? (Smart Deduplication is active)`)) return;
-
-                ingestBtn.disabled = true;
-                const label = ingestBtn.querySelector('span');
-                const originalLabel = label.innerText;
-
-                let added = 0;
-                let skipped = 0;
-
-                for (let i = 0; i < records.length; i++) {
-                    const record = { ...records[i] };
-                    
-                    // ── Normalize Data ──────────────────
-                    if (record.timestamp_ms) {
-                        record.timestamp = firebase.firestore.Timestamp.fromMillis(record.timestamp_ms);
-                        delete record.timestamp_ms;
-                    }
-                    
-                    // ── Deterministic ID ────────────────
-                    const tsVal = record.timestamp ? record.timestamp.toMillis() : Date.now();
-                    const siteId = (record.site || 'unknown').toLowerCase();
-                    const pathId = (record.path || '/').replace(/[#/.]/g, '_');
-                    const cityId = (record.city || 'unk').toLowerCase().replace(/\s+/g, '_');
-                    const docId = `hist_${siteId}_${tsVal}_${pathId}_${cityId}`;
-
-                    try {
-                        const docRef = db.collection('visits').doc(docId);
-                        const docSnap = await docRef.get();
-                        
-                        if (docSnap.exists) {
-                            skipped++;
-                        } else {
-                            await docRef.set(record);
-                            added++;
-                        }
-                        
-                        label.innerText = `${Math.round(((i + 1) / records.length) * 100)}%`;
-                    } catch (err) {
-                        console.error('[Ingest] Error adding record:', err);
-                    }
-                }
-
-                alert(`Ingestion Complete!\n✅ ${added} New records added\n⏭️ ${skipped} Duplicates skipped`);
-                label.innerText = originalLabel;
-                ingestBtn.disabled = false;
-                filePicker.value = ''; // Reset picker
-                setupSnapshot(); // Refresh view
-            } catch (err) {
-                alert('Error parsing JSON file. Please ensure it is a valid Visitors export.');
-                console.error('[Ingest] Parse error:', err);
-                ingestBtn.disabled = false;
-            }
-        };
-        reader.readAsText(file);
-    });
 }
 
 function setupSnapshot() {
     if (unsubscribe) unsubscribe();
+    lastSnapshotData = null; 
 
     let q;
     if (currentFilter === 'all') {
-        q = db.collection('visits').orderBy('timestamp', 'desc');
+        q = db.collection('visits').orderBy('timestamp', 'desc').limit(500);
     } else {
-        q = db.collection('visits').where('site', '==', currentFilter);
+        q = db.collection('visits')
+            .where('site', '==', currentFilter)
+            .orderBy('timestamp', 'desc')
+            .limit(500);
     }
 
     unsubscribe = q.onSnapshot((snapshot) => {
@@ -235,7 +157,12 @@ function processData(snapshot) {
     const tbody = document.getElementById('visitors-tbody');
     if (tbody) tbody.innerHTML = '';
 
-    markers.forEach(m => { if (map) map.removeLayer(m); });
+    // Clear existing markers properly to prevent Leaflet layer leakage
+    if (markersGroup) {
+        markersGroup.clearLayers();
+    } else {
+        markersGroup = L.layerGroup().addTo(map);
+    }
     markers = [];
 
     // ── Time Filter Logic ──────────────────
@@ -310,7 +237,8 @@ function processData(snapshot) {
         }
     });
 
-    L.featureGroup(markers).addTo(map);
+    // Update markers group instead of creating a new FeatureGroup every time
+    markers.forEach(m => m.addTo(markersGroup));
 
     renderRankings(stats);
     updateHUD(stats);
@@ -357,15 +285,15 @@ function renderRankings(stats) {
     if (mob === 0) {
         appleEl.style.width = '50%';
         androidEl.style.width = '50%';
-        appleEl.innerText = '—';
-        androidEl.innerText = '—';
+        appleEl.textContent = '—';
+        androidEl.textContent = '—';
     } else {
         const applePct = ((stats.devices.apple / mob) * 100).toFixed(1);
         const androidPct = ((stats.devices.android / mob) * 100).toFixed(1);
         appleEl.style.width = `${applePct}%`;
-        appleEl.innerText = `${applePct}%`;
+        appleEl.textContent = `${applePct}%`;
         androidEl.style.width = `${androidPct}%`;
-        androidEl.innerText = `${androidPct}%`;
+        androidEl.textContent = `${androidPct}%`;
     }
 }
 
@@ -393,11 +321,11 @@ function updateHUD(stats) {
     if (ctrEl) ctrEl.textContent = '—';
 
     if (stats.lastVisit) {
-        document.getElementById('overlay-last-visit').innerText = `Last event: ${stats.lastVisit.toLocaleTimeString()}`;
+        document.getElementById('overlay-last-visit').textContent = `Last event: ${stats.lastVisit.toLocaleTimeString()}`;
     } else {
-        document.getElementById('overlay-last-visit').innerText = 'Last event: —';
+        document.getElementById('overlay-last-visit').textContent = 'Last event: —';
     }
-    document.getElementById('overlay-site-name').innerText = currentFilter === 'all' ? 'GLOBAL TRAFFIC' : currentFilter.toUpperCase();
+    document.getElementById('overlay-site-name').textContent = currentFilter === 'all' ? 'GLOBAL TRAFFIC' : currentFilter.toUpperCase();
 }
 
 function initMap() {
