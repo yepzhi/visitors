@@ -121,12 +121,12 @@ function setupSnapshot() {
 
     let q;
     if (currentFilter === 'all') {
-        q = db.collection('visits').orderBy('timestamp', 'desc').limit(500);
+        q = db.collection('visits').orderBy('timestamp', 'desc').limit(2000);
     } else {
         q = db.collection('visits')
             .where('site', '==', currentFilter)
             .orderBy('timestamp', 'desc')
-            .limit(500);
+            .limit(2000);
     }
 
     unsubscribe = q.onSnapshot((snapshot) => {
@@ -175,20 +175,38 @@ function processData(snapshot) {
     else if (currentTimeRange === '6m') startTime = now.getTime() - (180 * 24 * 60 * 60 * 1000);
     else if (currentTimeRange === '1y') startTime = now.getTime() - (365 * 24 * 60 * 60 * 1000);
 
-    const filteredDocs = snapshot.docs.filter(docSnap => {
+    // ── Data Merging Logic ──────────────────
+    // Merge Firestore docs with Historical archive
+    const liveItems = snapshot.docs.map(doc => ({
+        ...doc.data(),
+        id: doc.id,
+        timestamp: doc.get('timestamp')?.toDate() || new Date(0)
+    }));
+
+    // Local historical data (convert timestamp_ms to Date objects)
+    const historicalItems = (typeof HISTORICAL_DATA !== 'undefined') ? HISTORICAL_DATA.map(item => ({
+        ...item,
+        timestamp: new Date(item.timestamp_ms || 0)
+    })) : [];
+
+    const allItems = [...liveItems, ...historicalItems];
+
+    // Filter by site if not 'all'
+    const siteFiltered = (currentFilter === 'all') 
+        ? allItems 
+        : allItems.filter(item => item.site === currentFilter);
+
+    // Filter by time range
+    const timeFiltered = siteFiltered.filter(item => {
         if (currentTimeRange === 'all') return true;
-        const ts = docSnap.get('timestamp')?.toMillis?.() ?? 0;
+        const ts = item.timestamp.getTime();
         return ts >= startTime;
     });
 
-    const sortedDocs = filteredDocs.slice().sort((a, b) => {
-        const ta = a.get('timestamp')?.toMillis?.() ?? 0;
-        const tb = b.get('timestamp')?.toMillis?.() ?? 0;
-        return tb - ta;
-    });
+    // Sort by most recent first
+    const sortedItems = timeFiltered.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 
-    sortedDocs.forEach((docSnap) => {
-        const data = docSnap.data();
+    sortedItems.forEach((data) => {
         stats.total++;
 
         if (data.city) stats.cities[data.city] = (stats.cities[data.city] || 0) + 1;
@@ -203,13 +221,13 @@ function processData(snapshot) {
         if (ua.isApple) stats.devices.apple++;
         if (ua.isAndroid) stats.devices.android++;
 
-        if (!stats.lastVisit && data.timestamp) stats.lastVisit = data.timestamp.toDate();
+        if (!stats.lastVisit && data.timestamp) stats.lastVisit = data.timestamp;
 
         const siteLabel = (data.site != null && data.site !== '') ? String(data.site) : 'unknown';
         const lat = Number(data.latitude);
         const lng = Number(data.longitude);
         if (Number.isFinite(lat) && Number.isFinite(lng) && lat !== 0 && lng !== 0) {
-            const timeStr = data.timestamp ? data.timestamp.toDate().toLocaleTimeString() : '…';
+            const timeStr = data.timestamp ? data.timestamp.toLocaleTimeString() : '…';
             const marker = L.circleMarker([lat, lng], {
                 radius: 6,
                 fillColor: accentColor,
@@ -225,7 +243,7 @@ function processData(snapshot) {
 
         if (stats.total <= 50) {
             const row = document.createElement('tr');
-            const timeStr = data.timestamp ? data.timestamp.toDate().toLocaleString() : '—';
+            const timeStr = data.timestamp ? data.timestamp.toLocaleString() : '—';
             row.innerHTML = `
                 <td><span class="site-badge">${escapeHtml(siteLabel.toUpperCase())}</span></td>
                 <td>${escapeHtml(data.city || '??')}, ${escapeHtml(data.country_code || '??')}</td>
