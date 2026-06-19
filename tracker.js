@@ -114,6 +114,10 @@
         if (siteId !== 'jovenesstem') {
             return;
         }
+        const path = window.location.pathname;
+        if (path !== '/' && path !== '/index.html') {
+            return;
+        }
         if (localStorage.getItem('yepzhi_cookie_consent') === 'true') {
             return;
         }
