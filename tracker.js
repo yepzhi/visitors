@@ -137,53 +137,80 @@
         style.innerHTML = `
             #yepzhi-cookie-banner {
                 position: fixed;
-                bottom: 20px;
-                right: 20px;
-                background: rgba(10, 10, 20, 0.85);
-                backdrop-filter: blur(12px);
-                -webkit-backdrop-filter: blur(12px);
-                border: 1px solid rgba(255, 255, 255, 0.08);
-                padding: 10px 16px;
-                border-radius: 16px;
+                bottom: 24px;
+                right: 24px;
+                width: 270px;
+                background: rgba(15, 17, 28, 0.88);
+                backdrop-filter: blur(20px);
+                -webkit-backdrop-filter: blur(20px);
+                border: 1px solid rgba(255, 255, 255, 0.12);
+                padding: 22px 20px;
+                border-radius: 24px;
                 color: #e4e4e7;
                 font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-                font-size: 13px;
+                font-size: 13.5px;
                 display: flex;
+                flex-direction: column;
                 align-items: center;
-                gap: 12px;
-                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3), 0 0 20px rgba(167, 139, 250, 0.05);
+                text-align: center;
+                gap: 16px;
+                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 30px rgba(39, 126, 255, 0.15);
                 z-index: 999999;
                 opacity: 0;
-                transform: translateY(10px);
-                transition: opacity 0.3s ease, transform 0.3s ease;
+                transform: translateY(20px) scale(0.95);
+                transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
             }
             #yepzhi-cookie-banner.visible {
                 opacity: 1;
-                transform: translateY(0);
+                transform: translateY(0) scale(1);
+            }
+            #yepzhi-cookie-banner .cookie-icon {
+                font-size: 32px;
+                line-height: 1;
+                margin-bottom: 2px;
+                filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
+                animation: floatCookie 3s ease-in-out infinite;
+            }
+            @keyframes floatCookie {
+                0%, 100% { transform: translateY(0); }
+                50% { transform: translateY(-4px); }
+            }
+            #yepzhi-cookie-banner span {
+                line-height: 1.5;
+                font-weight: 500;
+                color: #f4f4f5;
             }
             #yepzhi-cookie-banner .consent-btn {
-                background: rgba(255, 255, 255, 0.08);
-                border: 1px solid rgba(255, 255, 255, 0.15);
+                width: 100%;
+                background: linear-gradient(135deg, #277eff 0%, #00d2ff 100%);
+                border: none;
                 color: #ffffff;
-                padding: 4px 12px;
-                border-radius: 8px;
+                padding: 10px 20px;
+                border-radius: 20px;
                 cursor: pointer;
-                font-size: 12px;
-                font-weight: 600;
-                transition: all 0.2s;
+                font-size: 13.5px;
+                font-weight: 700;
+                box-shadow: 0 4px 14px rgba(39, 126, 255, 0.35);
+                transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+                outline: none;
             }
             #yepzhi-cookie-banner .consent-btn:hover {
-                background: rgba(255, 255, 255, 0.15);
-                border-color: rgba(255, 255, 255, 0.3);
+                transform: translateY(-2px);
+                box-shadow: 0 6px 20px rgba(39, 126, 255, 0.5);
+            }
+            #yepzhi-cookie-banner .consent-btn:active {
+                transform: translateY(0);
+                box-shadow: 0 3px 10px rgba(39, 126, 255, 0.4);
             }
             @media (max-width: 480px) {
                 #yepzhi-cookie-banner {
                     left: 20px;
+                    right: 20px;
                     bottom: 20px;
-                    flex-direction: column;
-                    align-items: stretch;
-                    text-align: center;
-                    gap: 8px;
+                    width: auto;
+                    max-width: none;
+                    padding: 20px 18px;
+                    border-radius: 22px;
                 }
             }
         `;
@@ -193,6 +220,7 @@
         const banner = document.createElement('div');
         banner.id = 'yepzhi-cookie-banner';
         banner.innerHTML = `
+            <div class="cookie-icon">🍪</div>
             <span>${text}</span>
             <button class="consent-btn">${btnText}</button>
         `;
