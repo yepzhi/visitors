@@ -110,9 +110,113 @@
         }
     }
 
+    function initCookieConsent() {
+        if (siteId !== 'jovenesstem') {
+            return;
+        }
+        if (localStorage.getItem('yepzhi_cookie_consent') === 'true') {
+            return;
+        }
+
+        const htmlLang = (document.documentElement.lang || '').toLowerCase();
+        const navLang = (navigator.language || '').toLowerCase();
+        const isSpanish = htmlLang.startsWith('es') || navLang.startsWith('es') || 
+            document.cookie.includes('geo-lang=es') || document.cookie.includes('jovenesstem-geo-lang=es');
+
+        const text = isSpanish 
+            ? 'Usamos cookies para mejorar tu experiencia.' 
+            : 'We use cookies to improve your experience.';
+        const btnText = isSpanish ? 'Aceptar' : 'Accept';
+
+        // Create style element
+        const style = document.createElement('style');
+        style.innerHTML = `
+            #yepzhi-cookie-banner {
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                background: rgba(10, 10, 20, 0.85);
+                backdrop-filter: blur(12px);
+                -webkit-backdrop-filter: blur(12px);
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                padding: 10px 16px;
+                border-radius: 16px;
+                color: #e4e4e7;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+                font-size: 13px;
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3), 0 0 20px rgba(167, 139, 250, 0.05);
+                z-index: 999999;
+                opacity: 0;
+                transform: translateY(10px);
+                transition: opacity 0.3s ease, transform 0.3s ease;
+            }
+            #yepzhi-cookie-banner.visible {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            #yepzhi-cookie-banner .consent-btn {
+                background: rgba(255, 255, 255, 0.08);
+                border: 1px solid rgba(255, 255, 255, 0.15);
+                color: #ffffff;
+                padding: 4px 12px;
+                border-radius: 8px;
+                cursor: pointer;
+                font-size: 12px;
+                font-weight: 600;
+                transition: all 0.2s;
+            }
+            #yepzhi-cookie-banner .consent-btn:hover {
+                background: rgba(255, 255, 255, 0.15);
+                border-color: rgba(255, 255, 255, 0.3);
+            }
+            @media (max-width: 480px) {
+                #yepzhi-cookie-banner {
+                    left: 20px;
+                    bottom: 20px;
+                    flex-direction: column;
+                    align-items: stretch;
+                    text-align: center;
+                    gap: 8px;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Create banner element
+        const banner = document.createElement('div');
+        banner.id = 'yepzhi-cookie-banner';
+        banner.innerHTML = `
+            <span>${text}</span>
+            <button class="consent-btn">${btnText}</button>
+        `;
+        document.body.appendChild(banner);
+
+        // Animate in
+        setTimeout(() => {
+            banner.classList.add('visible');
+        }, 100);
+
+        // Accept handler
+        banner.querySelector('.consent-btn').addEventListener('click', () => {
+            localStorage.setItem('yepzhi_cookie_consent', 'true');
+            banner.classList.remove('visible');
+            setTimeout(() => {
+                banner.remove();
+            }, 300);
+        });
+    }
+
     if (document.readyState === 'complete') {
         initTracker();
+        initCookieConsent();
     } else {
-        window.addEventListener('load', initTracker);
+        window.addEventListener('load', () => {
+            initTracker();
+            initCookieConsent();
+        });
     }
 })();
+
