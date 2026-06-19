@@ -115,9 +115,64 @@ function initUI() {
 
 }
 
+let currentRealCount = null;
+
+async function fetchRealCount(site) {
+    const payload = {
+        structuredAggregationQuery: {
+            structuredQuery: {
+                from: [{ collectionId: 'visits' }]
+            },
+            aggregations: [{ count: {}, alias: 'total_count' }]
+        }
+    };
+    if (site && site !== 'all') {
+        payload.structuredAggregationQuery.structuredQuery.where = {
+            fieldFilter: {
+                field: { fieldPath: 'site' },
+                op: 'EQUAL',
+                value: { stringValue: site }
+            }
+        };
+    }
+    try {
+        const res = await fetch('https://firestore.googleapis.com/v1/projects/neosys-4dc42/databases/(default)/documents:runAggregationQuery', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        const count = Number(data[0]?.result?.aggregateFields?.total_count?.integerValue);
+        return Number.isFinite(count) ? count : null;
+    } catch (e) {
+        console.error('[Visitors] Failed to fetch real count:', e);
+        return null;
+    }
+}
+
+async function updateRealCountHUD() {
+    const filter = currentFilter;
+    const count = await fetchRealCount(filter);
+    if (filter === currentFilter && count !== null) {
+        currentRealCount = count;
+        // Re-calculate the total views using the real count
+        const historicalItems = (typeof HISTORICAL_DATA !== 'undefined') ? HISTORICAL_DATA : [];
+        const historicalFiltered = (filter === 'all')
+            ? historicalItems
+            : historicalItems.filter(item => item.site === filter);
+        
+        const total = count + historicalFiltered.length;
+        const totalEl = document.getElementById('stat-total-views');
+        if (totalEl) {
+            totalEl.innerText = total;
+        }
+    }
+}
+
 function setupSnapshot() {
     if (unsubscribe) unsubscribe();
     lastSnapshotData = null; 
+    currentRealCount = null; // Reset to force refresh on view update
 
     let q;
     if (currentFilter === 'all') {
@@ -140,6 +195,9 @@ function setupSnapshot() {
             tbody.innerHTML = `<tr><td colspan="5" style="color:#f87171;padding:16px;">${escapeHtml(error.message || String(error))}</td></tr>`;
         }
     });
+
+    // Fetch the real total count in parallel
+    updateRealCountHUD();
 }
 
 function processData(snapshot) {
@@ -329,7 +387,16 @@ function renderList(id, dataObj) {
 }
 
 function updateHUD(stats) {
-    document.getElementById('stat-total-views').innerText = stats.total;
+    const historicalItems = (typeof HISTORICAL_DATA !== 'undefined') ? HISTORICAL_DATA : [];
+    const historicalFiltered = (currentFilter === 'all')
+        ? historicalItems
+        : historicalItems.filter(item => item.site === currentFilter);
+        
+    const displayTotal = (currentRealCount !== null) 
+        ? (currentRealCount + historicalFiltered.length) 
+        : stats.total;
+
+    document.getElementById('stat-total-views').innerText = displayTotal;
     document.getElementById('stat-total-countries').innerText = Object.keys(stats.countries).length;
     document.getElementById('stat-total-cities').innerText = Object.keys(stats.cities).length;
 
