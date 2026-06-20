@@ -66,6 +66,13 @@
     }
 
     async function initTracker() {
+        // Deduplication: only log once per browser session per site
+        const sessionKey = `yepzhi_tracked_${siteId}`;
+        if (sessionStorage.getItem(sessionKey)) {
+            console.log('[Yepzhi-Tracker] Already tracked this session:', siteId);
+            return;
+        }
+
         try {
             if (typeof firebase === 'undefined') {
                 await loadScript('https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js');
@@ -99,11 +106,15 @@
             };
 
             await db.collection('visits').add(visitData);
+            // Mark as tracked for this session only after successful write
+            sessionStorage.setItem(sessionKey, '1');
             console.log('[Yepzhi-Tracker] Visit logged:', siteId);
         } catch (error) {
             // Discrete log for tracking-only issues
             if (error && error.code === 'permission-denied') {
                 console.log('%c [Yepzhi-Tracker] ', 'background:#333;color:#999;font-size:10px;', 'Tracking limited (Permissions)');
+            } else if (error && (error.code === 'resource-exhausted' || (error.message && error.message.includes('quota')))) {
+                console.log('%c [Yepzhi-Tracker] ', 'background:#333;color:#fb923c;font-size:10px;', 'Tracking paused (Quota limit)');
             } else {
                 console.warn('[Yepzhi-Tracker] Tracking error:', error);
             }

@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════
-   VISITORS DASHBOARD LOGIC — app.js (v5.6.0)
-   Firestore: filtered queries use where+limit only.
-   Advanced Glassmorphism & Centered Nav integrated.
+   VISITORS DASHBOARD LOGIC — app.js (v5.7.0)
+   Firestore: one-shot get() + localStorage cache.
+   Quota-optimised: no real-time listeners.
    ═══════════════════════════════════════════ */
 
 const FIREBASE_CONFIG = {
@@ -25,8 +25,35 @@ let markers = [];
 let currentFilter = 'all';
 let currentTimeRange = 'all';
 let lastSnapshotData = null;
-let unsubscribe = null;
 const accentColor = "#a78bfa";
+
+// ── Cache helpers (localStorage) ─────────────────────────────────────────────
+const CACHE_TTL_COUNT_MS  = 10 * 60 * 1000; // 10 min for the aggregated count
+const CACHE_TTL_SNAP_MS   =  5 * 60 * 1000; //  5 min for the snapshot docs
+
+function cacheSet(key, value) {
+    try {
+        localStorage.setItem(key, JSON.stringify({ ts: Date.now(), value }));
+    } catch (_) {}
+}
+
+function cacheGet(key, ttl) {
+    try {
+        const raw = localStorage.getItem(key);
+        if (!raw) return null;
+        const { ts, value } = JSON.parse(raw);
+        if (Date.now() - ts > ttl) return null;
+        return value;
+    } catch (_) { return null; }
+}
+
+function cacheClear(prefix) {
+    try {
+        Object.keys(localStorage)
+            .filter(k => k.startsWith(prefix))
+            .forEach(k => localStorage.removeItem(k));
+    } catch (_) {}
+}
 
 
 function escapeHtml(s) {
@@ -93,6 +120,9 @@ function initUI() {
     });
 
     document.getElementById('refresh-btn').addEventListener('click', () => {
+        // Clear caches so we force a fresh Firestore fetch
+        cacheClear('neosys_count_');
+        cacheClear('neosys_snap_');
         setupSnapshot();
         const icon = document.querySelector('.refresh-icon');
         icon.style.transform = 'rotate(360deg)';
@@ -116,8 +146,19 @@ function initUI() {
 }
 
 let currentRealCount = null;
+let isFetching = false;
+
+function countCacheKey(site) { return `neosys_count_${site}`; }
+function snapCacheKey(site)  { return `neosys_snap_${site}`; }
 
 async function fetchRealCount(site) {
+    // Check cache first
+    const cached = cacheGet(countCacheKey(site), CACHE_TTL_COUNT_MS);
+    if (cached !== null) {
+        console.log('[Visitors] Count from cache:', cached);
+        return cached;
+    }
+
     const payload = {
         structuredAggregationQuery: {
             structuredQuery: {
@@ -141,9 +182,21 @@ async function fetchRealCount(site) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
+        if (res.status === 429) {
+            console.warn('[Visitors] Firestore quota exceeded (429). Serving from cache or historical data.');
+            return null;
+        }
         const data = await res.json();
+        if (data[0]?.error) {
+            console.warn('[Visitors] Aggregation error:', data[0].error.message);
+            return null;
+        }
         const count = Number(data[0]?.result?.aggregateFields?.total_count?.integerValue);
-        return Number.isFinite(count) ? count : null;
+        if (Number.isFinite(count)) {
+            cacheSet(countCacheKey(site), count);
+            return count;
+        }
+        return null;
     } catch (e) {
         console.error('[Visitors] Failed to fetch real count:', e);
         return null;
@@ -155,25 +208,45 @@ async function updateRealCountHUD() {
     const count = await fetchRealCount(filter);
     if (filter === currentFilter && count !== null) {
         currentRealCount = count;
-        // Re-calculate the total views using the real count
         const historicalItems = (typeof HISTORICAL_DATA !== 'undefined') ? HISTORICAL_DATA : [];
         const historicalFiltered = (filter === 'all')
             ? historicalItems
             : historicalItems.filter(item => item.site === filter);
-        
         const total = count + historicalFiltered.length;
         const totalEl = document.getElementById('stat-total-views');
-        if (totalEl) {
-            totalEl.innerText = total;
-        }
+        if (totalEl) totalEl.innerText = total.toLocaleString();
     }
 }
 
-function setupSnapshot() {
-    if (unsubscribe) unsubscribe();
-    lastSnapshotData = null; 
-    currentRealCount = null; // Reset to force refresh on view update
+async function setupSnapshot() {
+    if (isFetching) return;
+    isFetching = true;
+    lastSnapshotData = null;
+    currentRealCount = null;
 
+    const cKey = snapCacheKey(currentFilter);
+    const cachedDocs = cacheGet(cKey, CACHE_TTL_SNAP_MS);
+
+    if (cachedDocs) {
+        console.log('[Visitors] Docs from localStorage cache:', cachedDocs.length);
+        // Wrap in a fake snapshot-like object
+        const fakeSnapshot = {
+            docs: cachedDocs.map(d => ({
+                id: d.id,
+                data: () => d,
+                get: (field) => d[field]
+            })),
+            size: cachedDocs.length
+        };
+        lastSnapshotData = fakeSnapshot;
+        processData(fakeSnapshot);
+        isFetching = false;
+        // Still refresh the count HUD in background (uses its own cache)
+        updateRealCountHUD();
+        return;
+    }
+
+    // One-shot fetch (much cheaper than onSnapshot listener)
     let q;
     if (currentFilter === 'all') {
         q = db.collection('visits').orderBy('timestamp', 'desc').limit(2000);
@@ -184,20 +257,36 @@ function setupSnapshot() {
             .limit(2000);
     }
 
-    unsubscribe = q.onSnapshot((snapshot) => {
-        console.log('[Visitors] Snapshot size:', snapshot.size);
-        lastSnapshotData = snapshot; // Store for re-filtering
-        processData(snapshot);
-    }, (error) => {
-        console.error('Snapshot error:', error);
-        const tbody = document.getElementById('visitors-tbody');
-        if (tbody) {
-            tbody.innerHTML = `<tr><td colspan="5" style="color:#f87171;padding:16px;">${escapeHtml(error.message || String(error))}</td></tr>`;
-        }
-    });
+    try {
+        const snapshot = await q.get();
+        console.log('[Visitors] Firestore fetch size:', snapshot.size);
 
-    // Fetch the real total count in parallel
-    updateRealCountHUD();
+        // Serialize docs to localStorage for caching
+        const serialised = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        cacheSet(cKey, serialised);
+
+        lastSnapshotData = snapshot;
+        processData(snapshot);
+        updateRealCountHUD();
+    } catch (error) {
+        if (error && (error.code === 'resource-exhausted' || (error.message && error.message.includes('429')))) {
+            console.warn('[Visitors] Firestore quota exceeded — showing historical data only.');
+            // Show historical data only with a warning
+            processData({ docs: [], size: 0 });
+            const tbody = document.getElementById('visitors-tbody');
+            if (tbody && !tbody.innerHTML.trim()) {
+                tbody.innerHTML = `<tr><td colspan="5" style="color:#fb923c;padding:16px;text-align:center;">⚡ Firestore quota temporarily exceeded. Showing historical records only. Will auto-recover after midnight UTC.</td></tr>`;
+            }
+        } else {
+            console.error('[Visitors] Fetch error:', error);
+            const tbody = document.getElementById('visitors-tbody');
+            if (tbody) {
+                tbody.innerHTML = `<tr><td colspan="5" style="color:#f87171;padding:16px;">${escapeHtml(error.message || String(error))}</td></tr>`;
+            }
+        }
+    } finally {
+        isFetching = false;
+    }
 }
 
 function processData(snapshot) {
@@ -235,10 +324,17 @@ function processData(snapshot) {
 
     // ── Data Merging Logic ──────────────────
     // Merge Firestore docs with Historical archive
+    function parseTimestamp(ts) {
+        if (!ts) return new Date(0);
+        if (typeof ts.toDate === 'function') return ts.toDate(); // live Firestore Timestamp
+        if (ts.seconds) return new Date(ts.seconds * 1000);      // cached plain object
+        if (ts._seconds) return new Date(ts._seconds * 1000);    // alternate serialisation
+        return new Date(0);
+    }
     const liveItems = snapshot.docs.map(doc => ({
         ...doc.data(),
         id: doc.id,
-        timestamp: doc.get('timestamp')?.toDate() || new Date(0)
+        timestamp: parseTimestamp(doc.get ? doc.get('timestamp') : doc.data?.().timestamp)
     }));
 
     // Local historical data (convert timestamp_ms to Date objects)
