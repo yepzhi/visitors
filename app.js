@@ -157,6 +157,11 @@ function initUI() {
         btn.addEventListener('click', () => {
             currentFilter = btn.getAttribute('data-site');
             syncFilterUI(currentFilter);
+            // Clear caches for this filter + reset lock so fetch always runs
+            cacheClear(snapCacheKey(currentFilter));
+            cacheClear(countCacheKey(currentFilter));
+            lastSnapshotData = null;
+            isFetching = false;
             setupSnapshot();
         });
     });
@@ -164,6 +169,11 @@ function initUI() {
     document.getElementById('site-filter').addEventListener('change', (e) => {
         currentFilter = e.target.value;
         syncFilterUI(currentFilter);
+        // Clear caches for this filter + reset lock so fetch always runs
+        cacheClear(snapCacheKey(currentFilter));
+        cacheClear(countCacheKey(currentFilter));
+        lastSnapshotData = null;
+        isFetching = false;
         setupSnapshot();
     });
 
