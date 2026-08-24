@@ -153,28 +153,26 @@ function initUI() {
         }
     }
 
+    function applyFilter(selectedFilter) {
+        currentFilter = selectedFilter;
+        syncFilterUI(currentFilter);
+        currentRealCount = null;
+        if (lastSnapshotData) {
+            processData(lastSnapshotData);
+        } else {
+            setupSnapshot();
+        }
+        updateRealCountHUD();
+    }
+
     document.querySelectorAll('.quick-filter-btn').forEach(btn => {
         btn.addEventListener('click', () => {
-            currentFilter = btn.getAttribute('data-site');
-            syncFilterUI(currentFilter);
-            // Clear caches for this filter + reset lock so fetch always runs
-            cacheClear(snapCacheKey(currentFilter));
-            cacheClear(countCacheKey(currentFilter));
-            lastSnapshotData = null;
-            isFetching = false;
-            setupSnapshot();
+            applyFilter(btn.getAttribute('data-site'));
         });
     });
 
     document.getElementById('site-filter').addEventListener('change', (e) => {
-        currentFilter = e.target.value;
-        syncFilterUI(currentFilter);
-        // Clear caches for this filter + reset lock so fetch always runs
-        cacheClear(snapCacheKey(currentFilter));
-        cacheClear(countCacheKey(currentFilter));
-        lastSnapshotData = null;
-        isFetching = false;
-        setupSnapshot();
+        applyFilter(e.target.value);
     });
 
     document.querySelectorAll('.time-btn').forEach(btn => {
@@ -192,13 +190,12 @@ let currentRealCount = null;
 let isFetching = false;
 
 function countCacheKey(site) { return `neosys_count_${site}`; }
-function snapCacheKey(site)  { return `neosys_snap_${site}`; }
+function snapCacheKey()      { return `neosys_snap_global`; }
 
 async function fetchRealCount(site) {
     // Check cache first
     const cached = cacheGet(countCacheKey(site), CACHE_TTL_COUNT_MS);
     if (cached !== null) {
-        console.log('[Visitors] Count from cache:', cached);
         return cached;
     }
 
@@ -284,21 +281,29 @@ async function updateRealCountHUD() {
         const total = count + historicalFiltered.length;
         const totalEl = document.getElementById('stat-total-views');
         if (totalEl) totalEl.innerText = total.toLocaleString();
+
+        const hintEl = document.getElementById('stat-total-hint');
+        if (hintEl) {
+            if (filter === 'all') hintEl.innerText = 'All time, all sites';
+            else if (filter === 'yepzhi_main') hintEl.innerText = 'All time, yepzhi.com';
+            else if (filter === 'jovenesstem') hintEl.innerText = 'All time, jovenesstem.com';
+            else if (filter === 'bose') hintEl.innerText = 'All time, yepzhi.com/bose';
+            else if (filter === 'yzai') hintEl.innerText = 'All time, yzai.yepzhi.com';
+            else if (filter === 'radios_unified') hintEl.innerText = 'All time, hopRadio + SERGRadio';
+            else hintEl.innerText = `All time, ${filter}`;
+        }
     }
 }
 
 async function setupSnapshot() {
     if (isFetching) return;
     isFetching = true;
-    lastSnapshotData = null;
-    currentRealCount = null;
 
-    const cKey = snapCacheKey(currentFilter);
+    const cKey = snapCacheKey();
     const cachedDocs = cacheGet(cKey, CACHE_TTL_SNAP_MS);
 
     if (cachedDocs) {
-        console.log('[Visitors] Docs from localStorage cache:', cachedDocs.length);
-        // Wrap in a fake snapshot-like object
+        console.log('[Visitors] Global docs from localStorage cache:', cachedDocs.length);
         const fakeSnapshot = {
             docs: cachedDocs.map(d => ({
                 id: d.id,
@@ -310,35 +315,14 @@ async function setupSnapshot() {
         lastSnapshotData = fakeSnapshot;
         processData(fakeSnapshot);
         isFetching = false;
-        // Still refresh the count HUD in background (uses its own cache)
         updateRealCountHUD();
         return;
     }
 
-    // One-shot fetch (much cheaper than onSnapshot listener)
-    let q;
-    if (currentFilter === 'all') {
-        q = db.collection('visits').orderBy('timestamp', 'desc').limit(2000);
-    } else if (currentFilter === 'radios_unified') {
-        q = db.collection('visits')
-            .where('site', 'in', ['hopradio', 'sergradio'])
-            .orderBy('timestamp', 'desc')
-            .limit(2000);
-    } else if (currentFilter === 'yepzhi_main') {
-        q = db.collection('visits')
-            .where('site', 'in', ['main', 'yepzhiweb'])
-            .orderBy('timestamp', 'desc')
-            .limit(2000);
-    } else {
-        q = db.collection('visits')
-            .where('site', '==', currentFilter)
-            .orderBy('timestamp', 'desc')
-            .limit(2000);
-    }
-
     try {
-        const snapshot = await q.get();
-        console.log('[Visitors] Firestore fetch size:', snapshot.size);
+        // ALWAYS query globally by timestamp desc to avoid composite index requirements
+        const snapshot = await db.collection('visits').orderBy('timestamp', 'desc').limit(2000).get();
+        console.log('[Visitors] Firestore global fetch size:', snapshot.size);
 
         // Serialize docs to localStorage for caching
         const serialised = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -348,21 +332,8 @@ async function setupSnapshot() {
         processData(snapshot);
         updateRealCountHUD();
     } catch (error) {
-        if (error && (error.code === 'resource-exhausted' || (error.message && error.message.includes('429')))) {
-            console.warn('[Visitors] Firestore quota exceeded — showing historical data only.');
-            // Show historical data only with a warning
-            processData({ docs: [], size: 0 });
-            const tbody = document.getElementById('visitors-tbody');
-            if (tbody && !tbody.innerHTML.trim()) {
-                tbody.innerHTML = `<tr><td colspan="5" style="color:#fb923c;padding:16px;text-align:center;">⚡ Firestore quota temporarily exceeded. Showing historical records only. Will auto-recover after midnight UTC.</td></tr>`;
-            }
-        } else {
-            console.error('[Visitors] Fetch error:', error);
-            const tbody = document.getElementById('visitors-tbody');
-            if (tbody) {
-                tbody.innerHTML = `<tr><td colspan="5" style="color:#f87171;padding:16px;">${escapeHtml(error.message || String(error))}</td></tr>`;
-            }
-        }
+        console.error('[Visitors] Global fetch error:', error);
+        processData({ docs: [], size: 0 });
     } finally {
         isFetching = false;
     }
@@ -569,9 +540,25 @@ function updateHUD(stats) {
         ? (currentRealCount + historicalFiltered.length) 
         : stats.total;
 
-    document.getElementById('stat-total-views').innerText = displayTotal;
-    document.getElementById('stat-total-countries').innerText = Object.keys(stats.countries).length;
-    document.getElementById('stat-total-cities').innerText = Object.keys(stats.cities).length;
+    const totalEl = document.getElementById('stat-total-views');
+    if (totalEl) totalEl.innerText = displayTotal.toLocaleString();
+    
+    const countriesEl = document.getElementById('stat-total-countries');
+    if (countriesEl) countriesEl.innerText = Object.keys(stats.countries).length.toLocaleString();
+    
+    const citiesEl = document.getElementById('stat-total-cities');
+    if (citiesEl) citiesEl.innerText = Object.keys(stats.cities).length.toLocaleString();
+
+    const hintEl = document.getElementById('stat-total-hint');
+    if (hintEl) {
+        if (currentFilter === 'all') hintEl.innerText = 'All time, all sites';
+        else if (currentFilter === 'yepzhi_main') hintEl.innerText = 'All time, yepzhi.com';
+        else if (currentFilter === 'jovenesstem') hintEl.innerText = 'All time, jovenesstem.com';
+        else if (currentFilter === 'bose') hintEl.innerText = 'All time, yepzhi.com/bose';
+        else if (currentFilter === 'yzai') hintEl.innerText = 'All time, yzai.yepzhi.com';
+        else if (currentFilter === 'radios_unified') hintEl.innerText = 'All time, hopRadio + SERGRadio';
+        else hintEl.innerText = `All time, ${currentFilter}`;
+    }
 
     const avgEl = document.getElementById('stat-avg-time');
     const ctrEl = document.getElementById('stat-ctr');
