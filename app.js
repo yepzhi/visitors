@@ -102,6 +102,13 @@ function parseUA(uaString) {
     };
 }
 
+function matchesSiteFilter(itemSite, filter) {
+    if (filter === 'all') return true;
+    if (filter === 'radios_unified') return itemSite === 'hopradio' || itemSite === 'sergradio';
+    if (filter === 'yepzhi_main') return itemSite === 'main' || itemSite === 'yepzhiweb';
+    return itemSite === filter;
+}
+
 function initUI() {
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -129,8 +136,34 @@ function initUI() {
         setTimeout(() => { icon.style.transform = 'rotate(0deg)'; }, 500);
     });
 
+    function syncFilterUI(selectedFilter) {
+        document.querySelectorAll('.quick-filter-btn').forEach(btn => {
+            if (btn.getAttribute('data-site') === selectedFilter) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+        const siteDropdown = document.getElementById('site-filter');
+        if (siteDropdown) {
+            const hasOption = Array.from(siteDropdown.options).some(o => o.value === selectedFilter);
+            if (hasOption) {
+                siteDropdown.value = selectedFilter;
+            }
+        }
+    }
+
+    document.querySelectorAll('.quick-filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            currentFilter = btn.getAttribute('data-site');
+            syncFilterUI(currentFilter);
+            setupSnapshot();
+        });
+    });
+
     document.getElementById('site-filter').addEventListener('change', (e) => {
         currentFilter = e.target.value;
+        syncFilterUI(currentFilter);
         setupSnapshot();
     });
 
@@ -157,6 +190,32 @@ async function fetchRealCount(site) {
     if (cached !== null) {
         console.log('[Visitors] Count from cache:', cached);
         return cached;
+    }
+
+    if (site === 'radios_unified') {
+        const [cHop, cSerg] = await Promise.all([
+            fetchRealCount('hopradio'),
+            fetchRealCount('sergradio')
+        ]);
+        if (cHop !== null || cSerg !== null) {
+            const sum = (cHop || 0) + (cSerg || 0);
+            cacheSet(countCacheKey(site), sum);
+            return sum;
+        }
+        return null;
+    }
+
+    if (site === 'yepzhi_main') {
+        const [cMain, cWeb] = await Promise.all([
+            fetchRealCount('main'),
+            fetchRealCount('yepzhiweb')
+        ]);
+        if (cMain !== null || cWeb !== null) {
+            const sum = (cMain || 0) + (cWeb || 0);
+            cacheSet(countCacheKey(site), sum);
+            return sum;
+        }
+        return null;
     }
 
     const payload = {
@@ -211,7 +270,7 @@ async function updateRealCountHUD() {
         const historicalItems = (typeof HISTORICAL_DATA !== 'undefined') ? HISTORICAL_DATA : [];
         const historicalFiltered = (filter === 'all')
             ? historicalItems
-            : historicalItems.filter(item => item.site === filter);
+            : historicalItems.filter(item => matchesSiteFilter(item.site, filter));
         const total = count + historicalFiltered.length;
         const totalEl = document.getElementById('stat-total-views');
         if (totalEl) totalEl.innerText = total.toLocaleString();
@@ -250,6 +309,16 @@ async function setupSnapshot() {
     let q;
     if (currentFilter === 'all') {
         q = db.collection('visits').orderBy('timestamp', 'desc').limit(2000);
+    } else if (currentFilter === 'radios_unified') {
+        q = db.collection('visits')
+            .where('site', 'in', ['hopradio', 'sergradio'])
+            .orderBy('timestamp', 'desc')
+            .limit(2000);
+    } else if (currentFilter === 'yepzhi_main') {
+        q = db.collection('visits')
+            .where('site', 'in', ['main', 'yepzhiweb'])
+            .orderBy('timestamp', 'desc')
+            .limit(2000);
     } else {
         q = db.collection('visits')
             .where('site', '==', currentFilter)
@@ -346,9 +415,7 @@ function processData(snapshot) {
     const allItems = [...liveItems, ...historicalItems];
 
     // Filter by site if not 'all'
-    const siteFiltered = (currentFilter === 'all') 
-        ? allItems 
-        : allItems.filter(item => item.site === currentFilter);
+    const siteFiltered = allItems.filter(item => matchesSiteFilter(item.site, currentFilter));
 
     // Filter by time range
     const timeFiltered = siteFiltered.filter(item => {
@@ -486,7 +553,7 @@ function updateHUD(stats) {
     const historicalItems = (typeof HISTORICAL_DATA !== 'undefined') ? HISTORICAL_DATA : [];
     const historicalFiltered = (currentFilter === 'all')
         ? historicalItems
-        : historicalItems.filter(item => item.site === currentFilter);
+        : historicalItems.filter(item => matchesSiteFilter(item.site, currentFilter));
         
     const displayTotal = (currentRealCount !== null) 
         ? (currentRealCount + historicalFiltered.length) 
@@ -506,7 +573,18 @@ function updateHUD(stats) {
     } else {
         document.getElementById('overlay-last-visit').textContent = 'Last event: —';
     }
-    document.getElementById('overlay-site-name').textContent = currentFilter === 'all' ? 'GLOBAL TRAFFIC' : currentFilter.toUpperCase();
+
+    let displayName = currentFilter.toUpperCase();
+    if (currentFilter === 'all') displayName = 'GLOBAL TRAFFIC';
+    else if (currentFilter === 'yepzhi_main') displayName = 'YEPZHI.COM';
+    else if (currentFilter === 'jovenesstem') displayName = 'JOVENESSTEM.COM';
+    else if (currentFilter === 'bose') displayName = 'YEPZHI.COM / BOSE';
+    else if (currentFilter === 'yzai') displayName = 'YZAI.YEPZHI.COM';
+    else if (currentFilter === 'radios_unified') displayName = 'HOPRADIO + SERGRADIO';
+    else if (currentFilter === 'lot') displayName = 'LOT! MARKETPLACE';
+
+    const overlayEl = document.getElementById('overlay-site-name');
+    if (overlayEl) overlayEl.textContent = displayName;
 }
 
 function initMap() {

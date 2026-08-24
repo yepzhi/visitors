@@ -157,10 +157,62 @@ body {
     outline: none;
 }
 
+/* ── Quick Filter Direct Buttons Bar ─────── */
+.quick-filter-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    width: 100%;
+    padding: 6px 0 2px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+.quick-filter-bar::-webkit-scrollbar {
+    display: none;
+}
+
+.quick-filter-btn {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-secondary);
+    padding: 5px 13px;
+    border-radius: 20px;
+    font-size: 0.76rem;
+    font-weight: 700;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font);
+    text-decoration: none;
+    outline: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.quick-filter-btn:hover {
+    background: rgba(255, 255, 255, 0.09);
+    border-color: rgba(167, 139, 250, 0.4);
+    color: #ffffff;
+    transform: translateY(-1px);
+}
+
+.quick-filter-btn.active {
+    background: var(--accent);
+    color: #050510;
+    border-color: var(--accent);
+    box-shadow: 0 0 16px rgba(167, 139, 250, 0.45);
+    font-weight: 800;
+}
+
 /* ── Command Center Layout ───────────────── */
 .command-center {
     position: relative;
-    padding-top: 220px; /* Adjusted for taller nav */
+    padding-top: 250px; /* Adjusted for quick filter nav bar */
     min-height: 100vh;
 }
 
