@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════
-   VISITORS DASHBOARD LOGIC — app.js (v5.7.0)
+   VISITORS DASHBOARD LOGIC — app.js (v5.9.0)
    Firestore: one-shot get() + localStorage cache.
    Quota-optimised: no real-time listeners.
    ═══════════════════════════════════════════ */
