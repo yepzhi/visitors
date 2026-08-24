@@ -28,8 +28,8 @@ let lastSnapshotData = null;
 const accentColor = "#a78bfa";
 
 // ── Cache helpers (localStorage) ─────────────────────────────────────────────
-const CACHE_TTL_COUNT_MS  = 10 * 60 * 1000; // 10 min for the aggregated count
-const CACHE_TTL_SNAP_MS   =  5 * 60 * 1000; //  5 min for the snapshot docs
+const CACHE_TTL_COUNT_MS  =  2 * 60 * 1000; // 2 min for the aggregated count
+const CACHE_TTL_SNAP_MS   =  3 * 60 * 1000; //  3 min for the snapshot docs
 
 function cacheSet(key, value) {
     try {
@@ -646,6 +646,9 @@ function initParticles() {
 }
 
 window.addEventListener('load', () => {
+    // Always bust the count cache on page load so total is never stale
+    cacheClear('neosys_count_');
+
     initMap();
     initUI();
     setupSnapshot();
