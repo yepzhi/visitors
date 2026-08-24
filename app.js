@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════
-   VISITORS DASHBOARD LOGIC — app.js (v5.9.0)
+   VISITORS DASHBOARD LOGIC — app.js (v6.1.0)
    Firestore: one-shot get() + localStorage cache.
-   Quota-optimised: no real-time listeners.
+   Quota-optimised: in-memory filtering & aggregation queries.
    ═══════════════════════════════════════════ */
 
 const FIREBASE_CONFIG = {
@@ -535,8 +535,10 @@ function updateHUD(stats) {
     const historicalFiltered = (currentFilter === 'all')
         ? historicalItems
         : historicalItems.filter(item => matchesSiteFilter(item.site, currentFilter));
-        
-    const displayTotal = (currentRealCount !== null) 
+
+    // When 'all' time is selected, use real aggregated total + historical archive.
+    // When a specific time range is selected (e.g. today, 1w, 1m, 3m), use the time-filtered sample total.
+    const displayTotal = (currentTimeRange === 'all' && currentRealCount !== null) 
         ? (currentRealCount + historicalFiltered.length) 
         : stats.total;
 
@@ -549,15 +551,28 @@ function updateHUD(stats) {
     const citiesEl = document.getElementById('stat-total-cities');
     if (citiesEl) citiesEl.innerText = Object.keys(stats.cities).length.toLocaleString();
 
+    function getTimeLabel() {
+        if (currentTimeRange === 'today') return 'Today';
+        if (currentTimeRange === '1w') return 'Last 7 days';
+        if (currentTimeRange === '1m') return 'Last 30 days';
+        if (currentTimeRange === '3m') return 'Last 90 days';
+        if (currentTimeRange === '6m') return 'Last 180 days';
+        if (currentTimeRange === '1y') return 'Last 365 days';
+        return 'All time';
+    }
+
+    const timeLabel = getTimeLabel();
+    const siteLabelStr = (currentFilter === 'all') ? 'all sites' :
+                         (currentFilter === 'yepzhi_main') ? 'yepzhi.com' :
+                         (currentFilter === 'jovenesstem') ? 'jovenesstem.com' :
+                         (currentFilter === 'bose') ? 'yepzhi.com/bose' :
+                         (currentFilter === 'yzai') ? 'yzai.yepzhi.com' :
+                         (currentFilter === 'radios_unified') ? 'hopRadio + SERGRadio' :
+                         currentFilter;
+
     const hintEl = document.getElementById('stat-total-hint');
     if (hintEl) {
-        if (currentFilter === 'all') hintEl.innerText = 'All time, all sites';
-        else if (currentFilter === 'yepzhi_main') hintEl.innerText = 'All time, yepzhi.com';
-        else if (currentFilter === 'jovenesstem') hintEl.innerText = 'All time, jovenesstem.com';
-        else if (currentFilter === 'bose') hintEl.innerText = 'All time, yepzhi.com/bose';
-        else if (currentFilter === 'yzai') hintEl.innerText = 'All time, yzai.yepzhi.com';
-        else if (currentFilter === 'radios_unified') hintEl.innerText = 'All time, hopRadio + SERGRadio';
-        else hintEl.innerText = `All time, ${currentFilter}`;
+        hintEl.innerText = `${timeLabel}, ${siteLabelStr}`;
     }
 
     const avgEl = document.getElementById('stat-avg-time');
